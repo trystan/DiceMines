@@ -7,8 +7,8 @@ class PlayScreen extends Screen {
     private var heights:Grid3<Float>;
     private var tiles:Grid3<Int>;
     
-    private var floorHeight = 0.42;
-    private var wallHeight = 0.66;
+    private var floorHeight = 0.45;
+    private var wallHeight = 0.65;
 
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
@@ -18,9 +18,7 @@ class PlayScreen extends Screen {
     private var tile_stairs_down:Int = 62;
     private var tile_stairs_up:Int = 60;
 
-    private var px:Int = 20;
-    private var py:Int = 10;
-    private var pz:Int = 0;
+    private var player:Creature;
 
     public function new() {
         super();
@@ -37,18 +35,19 @@ class PlayScreen extends Screen {
     }
 
     private function move(by: { x:Int, y:Int, z:Int } ):Void {
-        if (tiles.get(px + by.x, py + by.y, pz) != tile_wall) {
-            px += by.x;
-            py += by.y;
+        if (!blocksMovement(player.x + by.x, player.y + by.y, player.z)) {
+            player.x += by.x;
+            player.y += by.y;
             
-            if (by.z == -1 && tiles.get(px, py, pz) == tile_stairs_up
-             || by.z == 1 && tiles.get(px, py, pz) == tile_stairs_down)
-                pz += by.z;
+            if (by.z == -1 && canGoUp(player.x, player.y, player.z)
+             || by.z == 1 && canGoDown(player.x, player.y, player.z))
+                player.z += by.z;
 
-            while (tiles.get(px, py, pz) == tile_empty)
-                pz++;
+            while (isEmptySpace(player.x, player.y, player.z))
+                player.z++;
         }
 
+        player.update();
         rl.trigger("redraw");
     }
     
@@ -57,12 +56,14 @@ class PlayScreen extends Screen {
 
         for (x in 0 ... tiles.width)
         for (y in 0 ... tiles.height) {
-            var g = getGraphic(x, y, pz);
-            display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
+            if (player.light.isLit(x, y)) {
+                var g = getGraphic(x, y, player.z);
+                display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
+            }
         }
 
-        var g = getGraphic(px, py, pz);
-        display.write("@", px, py, Color.hsv(200, 10, 90).toInt(), g.bg.toInt());
+        var g = getGraphic(player.x, player.y, player.z);
+        display.write("@", player.x, player.y, Color.hsv(200, 10, 90).toInt(), g.bg.toInt());
         display.update();
     }
 
@@ -92,6 +93,26 @@ class PlayScreen extends Screen {
         return { glyph: glyph, fg: fg, bg: bg };
     }
 
+    public function isEmptySpace(x:Int, y:Int, z:Int):Bool {
+        return tiles.get(x, y, z) == tile_empty;
+    }
+
+    public function canGoDown(x:Int, y:Int, z:Int):Bool {
+        return tiles.get(x, y, z) == tile_stairs_down;
+    }
+
+    public function canGoUp(x:Int, y:Int, z:Int):Bool {
+        return tiles.get(x, y, z) == tile_stairs_up;
+    }
+
+    public function blocksMovement(x:Int, y:Int, z:Int):Bool {
+        return !tiles.isInBounds(x, y, z) || tiles.get(x, y, z) == tile_wall;
+    }
+
+    public function blocksVision(x:Int, y:Int, z:Int):Bool {
+        return !tiles.isInBounds(x, y, z) || tiles.get(x, y, z) == tile_wall;
+    }
+
     private function worldgen(w:Int, h:Int, d:Int):Void {
         heights = new Grid3<Float>(w, h, d);
 
@@ -109,10 +130,14 @@ class PlayScreen extends Screen {
         addBridges();
         addStairs();
 
+        player = new Creature("@", 20, 20, 0);
+        player.world = this;
+        player.light = new Shadowcaster();
         do {
-            px = Math.floor(Math.random() * (tiles.width - 20) + 10);
-            py = Math.floor(Math.random() * (tiles.height - 20) + 10);
-        } while(tiles.get(px, py, pz) != tile_floor);
+            player.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
+            player.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+        } while(tiles.get(player.x, player.y, player.z) != tile_floor);
+        player.update();
     }
 
     private function disrupt(amount:Int):Void {
@@ -129,7 +154,7 @@ class PlayScreen extends Screen {
                 var dist = x*x + y*y + z*z*4;
                 if (dist > r*r || !heights.isInBounds(cx+x, cy+y, cz+z))
                     continue;
-                var amount = r - Math.sqrt(dist) * mult;
+                var amount = (r - Math.sqrt(dist)) * mult;
                 heights.set(cx+x, cy+y, cz+z, heights.get(cx+x,cy+y,cz+z) + amount);
             }
         }
@@ -142,15 +167,14 @@ class PlayScreen extends Screen {
         for (y in 0 ... heights.height)
         for (z in 0 ... heights.depth) {
             var value = heights.get(x, y, z);
-            var count = 1;
             for (ox in -r ... r+1)
             for (oy in -r ... r+1) {
                 if (!heights.isInBounds(x+ox, y+oy, z))
                     continue;
+
                 value += heights.get(x+ox, y+oy, z);
-                count += 1;
             }
-            heights2.set(x, y, z, value / count);
+            heights2.set(x, y, z, value);
         }
         heights = heights2;
     }
@@ -233,21 +257,21 @@ class PlayScreen extends Screen {
     }
 
     private function addStairs():Void {
-        for (z in 0 ... heights.depth) {
+        for (z in 0 ... heights.depth-1) {
             var count = 0;
             while (count < 5) {
                 var x = Math.floor(Math.random() * heights.width);
                 var y = Math.floor(Math.random() * heights.height);
+
                 if (tiles.get(x, y, z) != tile_floor)
                     continue;
 
-                if (z < tiles.depth-1 && tiles.get(x, y, z+1) != tile_floor)
+                if (tiles.get(x, y, z+1) != tile_floor)
                     continue;
 
                 count++;
                 tiles.set(x, y, z, tile_stairs_down);
-                if (z < tiles.depth-1)
-                    tiles.set(x, y, z+1, tile_stairs_up);
+                tiles.set(x, y, z+1, tile_stairs_up);
             }
         }
     }
