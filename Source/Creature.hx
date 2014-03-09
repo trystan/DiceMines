@@ -8,6 +8,7 @@ class Creature {
     public var y:Int;
     public var z:Int;
     public var glyph:String;
+    public var name:String;
 
     public var hp:Int = 20;
     public var maxHp:Int = 20;
@@ -20,14 +21,15 @@ class Creature {
 
     public var light:Shadowcaster;
 
-    public function new(glyph:String, x:Int, y:Int, z:Int) {
+    public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
         this.glyph = glyph;
+        this.name = name;
         this.x = x;
         this.y = y;
         this.z = z;
 
-        accuracyStat = "2d2+2";
-        damageStat = "2d2+2";
+        accuracyStat = "3d3+3";
+        damageStat = "3d3+3";
         evasionStat = "2d2+2";
         resistanceStat = "2d2+2";
     }
@@ -60,17 +62,45 @@ class Creature {
     }
 
     public function attack(other:Creature):Void {
-        if (Dice.roll(accuracyStat) < Dice.roll(other.evasionStat))
+        if (other.glyph == glyph)
             return;
 
-        other.hp -= Math.floor(Math.max(0, Dice.roll(damageStat) - Dice.roll(other.resistanceStat)));
-        if (other.hp < 1)
-            other.isAlive = false;
+        var accuracy = Dice.roll(accuracyStat);
+        var evasion = Dice.roll(other.evasionStat);
+
+        if (accuracy < evasion) {
+            world.addMessage('$name misses ${other.name} ($accuracyStat accuracy vs $evasionStat evasion)');
+            return;
+        }
+
+        var damage = Dice.roll(damageStat);
+        var resistance = Dice.roll(other.resistanceStat);
+        var actualDamage = Math.floor(Math.max(0, damage - resistance));
+
+        if (actualDamage == 0)
+            world.addMessage('${other.name} deflected $name (${other.resistanceStat} resistance vs $damageStat damage)');
+        else if (actualDamage >= other.hp)
+            world.addMessage('$name hit ${other.name} for $actualDamage damage and kills it ($damageStat damge vs ${other.resistanceStat} resistance)');
+        else
+            world.addMessage('$name hit ${other.name} for $actualDamage damage ($damageStat damge vs ${other.resistanceStat} resistance)');
+
+        other.hp -= actualDamage;
     }
 
     public function update():Void {
-        while (world.isEmptySpace(x, y, z))
+        var fallDistance = 0;
+        while (world.isEmptySpace(x, y, z)) {
             z++;
+            fallDistance++;
+        }
+
+        if (fallDistance > 0) {
+            world.addMessage('$name falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
+            hp -= fallDistance * 2;
+        }
+
+        if (hp < 1)
+            isAlive = false;
 
         if (light == null)
             return;

@@ -20,9 +20,11 @@ class PlayScreen extends Screen {
 
     private var player:Creature;
     private var creatures:Array<Creature>;
+    private var messages:Array<String>;
 
     public function new() {
         super();
+        messages = new Array<String>();
         worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 20);
 
         on("<", move, { x:0,  y:0,  z:-1 });
@@ -39,7 +41,7 @@ class PlayScreen extends Screen {
         player.move(by.x, by.y, by.z);
 
         for (c in creatures) {
-            if (c != player)
+            if (c.isAlive && c != player)
                 c.doAi();
         }
 
@@ -76,7 +78,7 @@ class PlayScreen extends Screen {
 
             var g = getGraphic(c.x, c.y, c.z);
             var color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(0, 20, 90);
-            display.write("@", c.x, c.y, color.toInt(), g.bg.toInt());
+            display.write(c.glyph, c.x, c.y, color.toInt(), g.bg.toInt());
         }
 
         var x = display.widthInCharacters - 12;
@@ -85,6 +87,11 @@ class PlayScreen extends Screen {
         var bg = new Color(0, 0, 0).toInt();
         display.write("hp " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
 
+        var y = display.heightInCharacters - messages.length;
+        for (message in messages)
+            display.writeCenter(message, y++, fg, bg);
+
+        messages = new Array<String>();
         display.update();
     }
 
@@ -112,6 +119,10 @@ class PlayScreen extends Screen {
         }
 
         return { glyph: glyph, fg: fg, bg: bg };
+    }
+
+    public function addMessage(text:String):Void {
+        messages.push(text);
     }
 
     public function addCreature(creature:Creature):Void {
@@ -165,7 +176,7 @@ class PlayScreen extends Screen {
 
         creatures = new Array<Creature>();
 
-        player = new Creature("@", 20, 20, 0);
+        player = new Creature("@", "player", 20, 20, 0);
         addCreature(player);
         player.light = new Shadowcaster();
         do {
@@ -176,7 +187,7 @@ class PlayScreen extends Screen {
 
         for (z in 0 ... tiles.depth) {
             for (i in 0 ...  15 + z) {
-                var creature = new Creature("a", 20, 20, z);
+                var creature = new Creature("s", "spider", 20, 20, z);
                 addCreature(creature);
                 do {
                     creature.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
