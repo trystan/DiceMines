@@ -19,6 +19,7 @@ class PlayScreen extends Screen {
     private var tile_stairs_up:Int = 60;
 
     private var player:Creature;
+    private var creatures:Array<Creature>;
 
     public function new() {
         super();
@@ -35,19 +36,24 @@ class PlayScreen extends Screen {
     }
 
     private function move(by: { x:Int, y:Int, z:Int } ):Void {
-        if (!blocksMovement(player.x + by.x, player.y + by.y, player.z)) {
-            player.x += by.x;
-            player.y += by.y;
-            
-            if (by.z == -1 && canGoUp(player.x, player.y, player.z)
-             || by.z == 1 && canGoDown(player.x, player.y, player.z))
-                player.z += by.z;
+        player.move(by.x, by.y, by.z);
 
-            while (isEmptySpace(player.x, player.y, player.z))
-                player.z++;
+        for (c in creatures) {
+            if (c != player)
+                c.doAi();
         }
 
-        player.update();
+        var stillAlive = new Array<Creature>();
+        for (c in creatures) {
+            c.update();
+            if (c.isAlive)
+                stillAlive.push(c);
+        }
+        creatures = stillAlive;
+
+        if (!player.isAlive)
+            switchTo(new EndScreen());
+
         rl.trigger("redraw");
     }
     
@@ -62,8 +68,14 @@ class PlayScreen extends Screen {
             }
         }
 
-        var g = getGraphic(player.x, player.y, player.z);
-        display.write("@", player.x, player.y, Color.hsv(200, 10, 90).toInt(), g.bg.toInt());
+        for (c in creatures) {
+            if (c.z != player.z || !player.light.isLit(c.x, c.y))
+                continue;
+
+            var g = getGraphic(c.x, c.y, c.z);
+            var color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(0, 20, 90);
+            display.write("@", c.x, c.y, color.toInt(), g.bg.toInt());
+        }
         display.update();
     }
 
@@ -91,6 +103,18 @@ class PlayScreen extends Screen {
         }
 
         return { glyph: glyph, fg: fg, bg: bg };
+    }
+
+    public function addCreature(creature:Creature):Void {
+        creature.world = this;
+        creatures.push(creature);
+    }
+
+    public function getCreature(x:Int, y:Int, z:Int):Creature {
+        for (c in creatures)
+            if (c.x == x && c.y == y && c.z == z)
+                return c;
+        return null;
     }
 
     public function isEmptySpace(x:Int, y:Int, z:Int):Bool {
@@ -130,14 +154,28 @@ class PlayScreen extends Screen {
         addBridges();
         addStairs();
 
+        creatures = new Array<Creature>();
+
         player = new Creature("@", 20, 20, 0);
-        player.world = this;
+        addCreature(player);
         player.light = new Shadowcaster();
         do {
             player.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
             player.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
         } while(tiles.get(player.x, player.y, player.z) != tile_floor);
         player.update();
+
+        for (z in 0 ... tiles.depth) {
+            for (i in 0 ...  15 + z) {
+                var creature = new Creature("a", 20, 20, z);
+                addCreature(creature);
+                do {
+                    creature.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
+                    creature.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+                } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
+                creature.update();
+            }
+        }
     }
 
     private function disrupt(amount:Int):Void {
