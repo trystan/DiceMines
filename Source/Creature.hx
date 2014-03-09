@@ -9,6 +9,7 @@ class Creature {
     public var z:Int;
     public var glyph:String;
     public var name:String;
+    public var fullName:String;
 
     public var hp:Int = 20;
     public var maxHp:Int = 20;
@@ -24,14 +25,15 @@ class Creature {
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
         this.glyph = glyph;
         this.name = name;
+        this.fullName = glyph == "@" ? name : ("the " + name);
         this.x = x;
         this.y = y;
         this.z = z;
 
-        accuracyStat = "3d3+3";
-        damageStat = "3d3+3";
-        evasionStat = "2d2+2";
-        resistanceStat = "2d2+2";
+        accuracyStat = "5d5+5";
+        damageStat = "5d5+5";
+        evasionStat = "4d4+4";
+        resistanceStat = "4d4+4";
     }
 
     public function doAi():Void {
@@ -62,14 +64,14 @@ class Creature {
     }
 
     public function attack(other:Creature):Void {
-        if (other.glyph == glyph)
+        if (glyph != "@" && other.glyph != "@")
             return;
 
         var accuracy = Dice.roll(accuracyStat);
         var evasion = Dice.roll(other.evasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('$name misses ${other.name} ($accuracyStat accuracy vs $evasionStat evasion)');
+            world.addMessage('$fullName misses ${other.fullName} ($accuracyStat accuracy vs ${other.evasionStat} evasion)');
             return;
         }
 
@@ -78,11 +80,11 @@ class Creature {
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
 
         if (actualDamage == 0)
-            world.addMessage('${other.name} deflected $name (${other.resistanceStat} resistance vs $damageStat damage)');
+            world.addMessage('${other.fullName} deflected $fullName (${other.resistanceStat} resistance vs $damageStat damage)');
         else if (actualDamage >= other.hp)
-            world.addMessage('$name hit ${other.name} for $actualDamage damage and kills it ($damageStat damge vs ${other.resistanceStat} resistance)');
+            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills it ($damageStat damge vs ${other.resistanceStat} resistance)');
         else
-            world.addMessage('$name hit ${other.name} for $actualDamage damage ($damageStat damge vs ${other.resistanceStat} resistance)');
+            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($damageStat damge vs ${other.resistanceStat} resistance)');
 
         other.hp -= actualDamage;
     }

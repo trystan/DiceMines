@@ -187,11 +187,12 @@ class PlayScreen extends Screen {
 
         for (z in 0 ... tiles.depth) {
             for (i in 0 ...  15 + z) {
-                var creature = new Creature("s", "spider", 20, 20, z);
+                var creature = Factory.enemy();
                 addCreature(creature);
                 do {
                     creature.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
                     creature.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+                    creature.z = z;
                 } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
                 creature.update();
             }
