@@ -7,13 +7,15 @@ class PlayScreen extends Screen {
     private var heights:Grid3<Float>;
     private var tiles:Grid3<Int>;
     
-    private var floorHeight = 0.45;
-    private var wallHeight = 0.65;
+    private var floorHeight = 0.42;
+    private var wallHeight = 0.66;
 
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
     private var tile_empty:Int = 0;
-    private var tile_bridge:Int = 240;
+    private var tile_bridge:Int = 61;
+    private var tile_stairs_down:Int = 62;
+    private var tile_stairs_up:Int = 60;
 
     private var pz:Int = 0;
 
@@ -46,10 +48,10 @@ class PlayScreen extends Screen {
 
     private function getGraphic(x:Int, y:Int, z:Int): { glyph:String, fg:Color, bg:Color } {
         var tile = tiles.get(x, y, z);
-        var h = (heights.get(x, y, z) - floorHeight) / 0.2 * 10;
+        var h = (heights.get(x, y, z) - floorHeight) / 0.2 * 5;
         var glyph = String.fromCharCode(tile);
-        var fg = Color.hsv(25 - z, 25, 50 + h);
-        var bg = Color.hsv(25 - z, 25,  5 + h);
+        var fg = Color.hsv(25 - z, 25, 40 + h);
+        var bg = Color.hsv(25 - z, 25, 10 + h);
 
         if (tile == tile_empty) {
             if (z == tiles.depth - 1) {
@@ -60,8 +62,8 @@ class PlayScreen extends Screen {
                 bg = Color.hsv(220, 50, 5);
             }
         } else if (tile == tile_bridge) {
-            fg = Color.hsv(45, 25, 12);
-            bg = Color.hsv(45, 25,  8);
+            fg = Color.hsv(60, 33, 12);
+            bg = Color.hsv(60, 33,  8);
         }
 
         if ((x+y) % 2 == 0) {
@@ -87,6 +89,7 @@ class PlayScreen extends Screen {
 
         makeTiles();
         addBridges();
+        addStairs();
     }
 
     private function disrupt(amount:Int):Void {
@@ -175,9 +178,9 @@ class PlayScreen extends Screen {
 
     private function addBridges():Void {
         for (z in 0 ... heights.depth) {
-            for (i in 0 ... 10) {
-                var cx = Math.floor(Math.random() * heights.width);
-                var cy = Math.floor(Math.random() * heights.height);
+            for (i in 0 ... 15) {
+                var cx = Math.floor(Math.random() * (heights.width - 10) + 5);
+                var cy = Math.floor(Math.random() * (heights.height - 10) + 5);
                 if (tiles.get(cx, cy, z) != tile_empty)
                     continue;
 
@@ -200,6 +203,26 @@ class PlayScreen extends Screen {
                     while (tiles.isInBounds(x, ++y, z) && tiles.get(x, y, z) == tile_empty)
                         tiles.set(x, y, z, tile_bridge);
                 }
+            }
+        }
+    }
+
+    private function addStairs():Void {
+        for (z in 0 ... heights.depth) {
+            var count = 0;
+            while (count < 5) {
+                var x = Math.floor(Math.random() * heights.width);
+                var y = Math.floor(Math.random() * heights.height);
+                if (tiles.get(x, y, z) != tile_floor)
+                    continue;
+
+                if (z < tiles.depth-1 && tiles.get(x, y, z+1) != tile_floor)
+                    continue;
+
+                count++;
+                tiles.set(x, y, z, tile_stairs_down);
+                if (z < tiles.depth-1)
+                    tiles.set(x, y, z+1, tile_stairs_up);
             }
         }
     }
