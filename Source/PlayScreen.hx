@@ -6,6 +6,9 @@ import knave.*;
 class PlayScreen extends Screen {
     private var heights:Grid3<Float>;
     private var tiles:Grid3<Int>;
+    
+    private var floorHeight = 0.45;
+    private var wallHeight = 0.65;
 
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
@@ -32,11 +35,29 @@ class PlayScreen extends Screen {
 
         for (x in 0 ... tiles.width)
         for (y in 0 ... tiles.height) {
-            var glyph = String.fromCharCode(tiles.get(x, y, pz));
-            display.write(glyph, x, y);
+            var g = getGraphic(x, y, pz);
+            display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
         }
 
         display.update();
+    }
+
+    private function getGraphic(x:Int, y:Int, z:Int): { glyph:String, fg:Color, bg:Color } {
+        var tile = tiles.get(x, y, z);
+        var h = (heights.get(x, y, z) - floorHeight) / 0.2 * 10;
+        var glyph = String.fromCharCode(tile);
+        var fg = Color.hsv(25 - z, 25, 50 + h);
+        var bg = Color.hsv(25 - z, 25,  5 + h);
+
+        if (tile == tile_empty)
+            bg = Color.hsv(220, 50, 5);
+
+        if ((x+y) % 2 == 0) {
+            fg = fg.darker();
+            bg = bg.darker();
+        }
+
+        return { glyph: glyph, fg: fg, bg: bg };
     }
 
     private function worldgen(w:Int, h:Int, d:Int):Void {
@@ -115,8 +136,6 @@ class PlayScreen extends Screen {
 
     private function makeTiles():Void {
         tiles = new Grid3<Int>(heights.width, heights.height, heights.depth);
-        var floorHeight = 0.45;
-        var wallHeight = 0.65;
 
         for (x in 0 ... heights.width)
         for (y in 0 ... heights.height)

@@ -39,7 +39,7 @@ class Color {
         return new Color(Math.floor(r*255), Math.floor(g*255), Math.floor(b*255));
     }
 
-    public function asInt():Int {
+    public function toInt():Int {
         return 0xff000000 | (r << 16) | (g << 8) | b;
     }
 
