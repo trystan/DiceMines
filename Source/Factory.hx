@@ -37,7 +37,23 @@ class Factory {
         }
     }
 
-    public static function item():Item {
+    public static function rangedWeapon():Item {
         return new Item(")", Color.hsv(30, 80, 80), "ranged", "short bow");
+    }
+
+    public static function meleeWeapon():Item {
+        return new Item("|", Color.hsv(200, 20, 80), "melee", "short sword");
+    }
+
+    public static function armor():Item {
+        return new Item("[", Color.hsv(60, 50, 80), "armor", "light armor");
+    }
+
+    public static function item():Item {
+        switch (Math.floor(Math.random() * 3)) {
+            case 0: return rangedWeapon();
+            case 1: return meleeWeapon();
+            default: return armor();
+        }
     }
 }

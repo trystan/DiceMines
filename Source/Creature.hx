@@ -24,6 +24,8 @@ class Creature {
     public var dice:Array<Int>;
 
     public var rangedWeapon:Item;
+    public var meleeWeapon:Item;
+    public var armor:Item;
 
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
         this.glyph = glyph;
@@ -64,6 +66,22 @@ class Creature {
                     world.addMessage('$name swaps his ${rangedWeapon.name} for the ${item.name} on the ground');
                 }
                 rangedWeapon = item;
+            } else if (item.type == "melee") {
+                if (meleeWeapon == null) {
+                    world.addMessage('$name grabs a ${item.name} off the ground');
+                } else {
+                    world.addItem(meleeWeapon, x, y, z);
+                    world.addMessage('$name swaps his ${meleeWeapon.name} for the ${item.name} on the ground');
+                }
+                meleeWeapon = item;
+            } else if (item.type == "armor") {
+                if (armor == null) {
+                    world.addMessage('$name grabs a ${item.name} off the ground');
+                } else {
+                    world.addItem(armor, x, y, z);
+                    world.addMessage('$name swaps his ${armor.name} for the ${item.name} on the ground');
+                }
+                armor = item;
             }
         }
     }
