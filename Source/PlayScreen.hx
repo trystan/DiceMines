@@ -13,10 +13,13 @@ class PlayScreen extends Screen {
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
     private var tile_empty:Int = 0;
+    private var tile_water:Int = 247;
     private var tile_bridge:Int = 61;
     private var tile_stairs_down:Int = 62;
     private var tile_stairs_up:Int = 60;
 
+    private var px:Int = 20;
+    private var py:Int = 10;
     private var pz:Int = 0;
 
     public function new() {
@@ -25,12 +28,27 @@ class PlayScreen extends Screen {
 
         on("<", move, { x:0,  y:0,  z:-1 });
         on(">", move, { x:0,  y:0,  z:1  });
+        on("left", move, { x:-1, y:0, z:0 });
+        on("right", move, { x:1, y:0, z:0 });
+        on("up", move, { x:0, y:-1, z:0 });
+        on("down", move, { x:0, y:1, z:0 });
         on(".", move, { x:0,  y:0,  z:0  });
         on("draw", draw);
     }
 
     private function move(by: { x:Int, y:Int, z:Int } ):Void {
-        pz += by.z;
+        if (tiles.get(px + by.x, py + by.y, pz) != tile_wall) {
+            px += by.x;
+            py += by.y;
+            
+            if (by.z == -1 && tiles.get(px, py, pz) == tile_stairs_up
+             || by.z == 1 && tiles.get(px, py, pz) == tile_stairs_down)
+                pz += by.z;
+
+            while (tiles.get(px, py, pz) == tile_empty)
+                pz++;
+        }
+
         rl.trigger("redraw");
     }
     
@@ -43,6 +61,8 @@ class PlayScreen extends Screen {
             display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
         }
 
+        var g = getGraphic(px, py, pz);
+        display.write("@", px, py, Color.hsv(200, 10, 90).toInt(), g.bg.toInt());
         display.update();
     }
 
@@ -54,13 +74,11 @@ class PlayScreen extends Screen {
         var bg = Color.hsv(25 - z, 25, 10 + h);
 
         if (tile == tile_empty) {
-            if (z == tiles.depth - 1) {
-                glyph = "=";
-                fg = Color.hsv(220, 35 + Math.random() * 10, 25);
-                bg = Color.hsv(220, 30 + Math.random() * 10, 20);
-            } else {
-                bg = Color.hsv(220, 50, 5);
-            }
+            bg = Color.hsv(220, 50, 5);
+        } else if (tile == tile_water) {
+            glyph = "=";
+            fg = Color.hsv(220, 35 + Math.random() * 10, 25);
+            bg = Color.hsv(220, 30 + Math.random() * 10, 20);
         } else if (tile == tile_bridge) {
             fg = Color.hsv(60, 33, 12);
             bg = Color.hsv(60, 33,  8);
@@ -90,6 +108,11 @@ class PlayScreen extends Screen {
         makeTiles();
         addBridges();
         addStairs();
+
+        do {
+            px = Math.floor(Math.random() * (tiles.width - 20) + 10);
+            py = Math.floor(Math.random() * (tiles.height - 20) + 10);
+        } while(tiles.get(px, py, pz) != tile_floor);
     }
 
     private function disrupt(amount:Int):Void {
@@ -173,6 +196,8 @@ class PlayScreen extends Screen {
         for (z in 0 ... heights.depth) {
             var height = heights.get(x, y, z);
             tiles.set(x, y, z, height < floorHeight ? tile_empty : (height > wallHeight ? tile_wall : tile_floor));
+            if (z == heights.depth - 1 && tiles.get(x, y, z) == tile_empty)
+                tiles.set(x, y, z, tile_water);
         }
     }
 
