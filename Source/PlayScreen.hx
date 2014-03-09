@@ -136,7 +136,7 @@ class PlayScreen extends Screen {
                 continue;
 
             var g = getGraphic(c.x, c.y, c.z);
-            var color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(0, 20, 90);
+            var color = c == player ? Color.hsv(200, 20, 90) : getCreatureColor(c);
             display.write(c.glyph, c.x, c.y, color.toInt(), g.bg.toInt());
         }
 
@@ -149,13 +149,13 @@ class PlayScreen extends Screen {
         }
 
         var x = display.widthInCharacters - 12;
-        var y = 2;
+        var y = 1;
         var fg = new Color(200, 200, 200).toInt();
         var bg = new Color(0, 0, 0).toInt();
-        display.write("hp " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
+        display.write(player.name + " " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
 
-        x = 2;
-        y = 2;
+        x = 1;
+        y = 1;
         var item = getItem(player.x, player.y, player.z);
         if (item == null)
             y += 2;
@@ -170,10 +170,16 @@ class PlayScreen extends Screen {
             display.writeCenter(message, y++, fg, bg);
 
         if (!isAnimating) {
-            while (messages.length > 5)
+            while (messages.length > 3)
                 messages.shift();
         }
+
         display.update();
+    }
+
+    private function getCreatureColor(creature:Creature):Color {
+        var percent = 1.0 * creature.hp / creature.maxHp;
+        return Color.hsv(0, 90, 90).lerp(Color.hsv(90, 90, 90), percent);
     }
 
     private function getGraphic(x:Int, y:Int, z:Int): { glyph:String, fg:Color, bg:Color } {

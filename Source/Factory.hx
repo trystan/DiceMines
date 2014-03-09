@@ -38,7 +38,7 @@ class Factory {
     }
 
     public static function rangedWeapon():Item {
-        var list = [{ name:"crappy bow",    accuracy:"0d0+0", evasion:"0d0+0", damage:"0d0+0", resistance:"0d0+0"},
+        var list = [{ name:"crappy bow",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0"},
                     { name:"short bow",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0"},
                     { name:"medium bow",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0"},
                     { name:"long bow",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0"},
@@ -55,7 +55,7 @@ class Factory {
     }
 
     public static function meleeWeapon():Item {
-        var list = [{ name:"crappy sword",    accuracy:"0d0+0", evasion:"0d0+0", damage:"0d0+0", resistance:"0d0+0"},
+        var list = [{ name:"crappy sword",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0"},
                     { name:"short sword",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0"},
                     { name:"medium sword",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0"},
                     { name:"long sword",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0"},
@@ -72,12 +72,12 @@ class Factory {
     }
 
     public static function armor():Item {
-        var list = [{ name:"crappy armor",    accuracy:"0d0+0", evasion:"0d0+0", damage:"0d0+0", resistance:"0d0+0"},
-                    { name:"light armor",     accuracy:"0d0+0", evasion:"2d2+0", damage:"0d0+0", resistance:"1d1+0"},
-                    { name:"medium armor",    accuracy:"0d0+0", evasion:"1d2+0", damage:"0d0+0", resistance:"1d2+0"},
-                    { name:"heavy armor",     accuracy:"0d0+0", evasion:"1d1+0", damage:"0d0+0", resistance:"2d2+0"},
-                    { name:"silver armor",    accuracy:"0d0+0", evasion:"1d1+5", damage:"0d0+0", resistance:"1d1+5"},
-                    { name:"heroic armor",    accuracy:"0d0+1", evasion:"1d1+1", damage:"0d0+1", resistance:"0d0+1"}];
+        var list = [{ name:"crappy armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"-1d2+0"},
+                    { name:"light armor",     accuracy:"0d0+0", evasion:"-1d1+0", damage:"0d0+0", resistance:"1d1+0"},
+                    { name:"medium armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"1d2+0"},
+                    { name:"heavy armor",     accuracy:"0d0+0", evasion:"-2d2+0", damage:"0d0+0", resistance:"2d2+0"},
+                    { name:"silver armor",    accuracy:"0d0+0", evasion:"-1d1+5", damage:"0d0+0", resistance:"1d1+5"},
+                    { name:"heroic armor",    accuracy:"0d0+1", evasion:"-1d1+1", damage:"0d0+1", resistance:"0d0+1"}];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("[", Color.hsv(90, 40, 80), "armor", def.name);

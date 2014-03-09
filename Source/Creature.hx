@@ -126,7 +126,7 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('${projectile.owner.fullName} misses ${fullName} (${projectile.accuracyStat} accuracy vs $effectiveEvasionStat evasion)');
+            world.addMessage('${projectile.owner.fullName} misses ${fullName} by ${evasion - accuracy} (${projectile.accuracyStat} accuracy vs $effectiveEvasionStat evasion)');
             return;
         }
 
@@ -140,7 +140,7 @@ class Creature {
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
 
         if (actualDamage == 0)
-            world.addMessage('${fullName} deflected ${projectile.owner.fullName} ($effectiveResistanceStat resistance vs ${projectile.damageStat} damage)');
+            world.addMessage('${fullName} deflected ${projectile.owner.fullName} by ${resistance - damage} ($effectiveResistanceStat resistance vs ${projectile.damageStat} damage)');
         else if (actualDamage >= hp)
             world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills it (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
         else
@@ -167,7 +167,7 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName misses ${other.fullName} ($effectiveAccuracyStat accuracy vs ${effectiveEvasionStat} evasion)');
+            world.addMessage('$fullName misses ${other.fullName} by ${evasion - accuracy} ($effectiveAccuracyStat accuracy vs ${effectiveEvasionStat} evasion)');
             return;
         }
 
@@ -184,7 +184,7 @@ class Creature {
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
 
         if (actualDamage == 0)
-            world.addMessage('${other.fullName} deflected $fullName ($effectiveResistanceStat resistance vs $effectiveDamageStat damage)');
+            world.addMessage('${other.fullName} deflected $fullName by ${resistance - damage} ($effectiveResistanceStat resistance vs $effectiveDamageStat damage)');
         else if (actualDamage >= other.hp)
             world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills it ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
         else
@@ -197,11 +197,13 @@ class Creature {
     }
 
     public function gainDice(amount:Int):Void {
+        var gains = new Array<String>();
         for (i in 0 ... amount) {
             var sides = Math.floor(Math.min(Dice.roll("1d9+0"), Dice.roll("1d9+0")));
-            world.addMessage('$fullName gains a d$sides');
             dice[sides - 1] += 1;
+            gains.push('1d$sides');
         }
+        world.addMessage('$fullName gains ${gains.join(", ")}');
     }
 
     public function update():Void {
