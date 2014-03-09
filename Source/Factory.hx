@@ -1,5 +1,7 @@
 package;
 
+import knave.Color;
+
 class Factory {
 
     public static function spider():Creature {
@@ -33,5 +35,9 @@ class Factory {
             case 2: return ghost();
             default: return elemental();
         }
+    }
+
+    public static function item():Item {
+        return new Item(")", Color.hsv(30, 80, 80), "ranged", "short bow");
     }
 }

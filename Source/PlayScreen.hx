@@ -20,6 +20,7 @@ class PlayScreen extends Screen {
 
     private var player:Creature;
     private var creatures:Array<Creature>;
+    private var items:Map<String, Item>;
     private var messages:Array<String>;
     private var projectiles:Array<Projectile>;
     private var isAnimating:Bool = false;
@@ -82,6 +83,8 @@ class PlayScreen extends Screen {
                 player.rangedAttack(x, y);
                 updateAfterAnimating = true;
             }));
+        else if (key == "g")
+            player.pickupItem();
 
         rl.trigger("redraw");
     }
@@ -119,7 +122,12 @@ class PlayScreen extends Screen {
         for (y in 0 ... tiles.height) {
             if (player.light.isLit(x, y)) {
                 var g = getGraphic(x, y, player.z);
-                display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
+
+                var item = getItem(x, y, player.z);
+                if (item != null)
+                    display.write(item.glyph, x, y, item.color.toInt(), g.bg.toInt());
+                else
+                    display.write(g.glyph, x, y, g.fg.toInt(), g.bg.toInt());
             }
         }
 
@@ -148,7 +156,14 @@ class PlayScreen extends Screen {
 
         x = 2;
         y = 2;
-        display.write("[f]ire bow", x, y += 2, fg, bg);
+        var item = getItem(player.x, player.y, player.z);
+        if (item == null)
+            y += 2;
+        else
+            display.write('[g]et ${item.name}', x, y += 2, fg, bg);
+
+        if (player.rangedWeapon != null)
+            display.write('[f]ire ${player.rangedWeapon.name}', x, y += 2, fg, bg);
 
         var y = display.heightInCharacters - messages.length;
         for (message in messages)
@@ -187,6 +202,20 @@ class PlayScreen extends Screen {
 
     public function addMessage(text:String):Void {
         messages.push(text);
+    }
+
+    public function addItem(item:Item, x:Int, y:Int, z:Int):Void {
+        items.set('$x,$y,$z', item);
+    }
+
+    public function getItem(x:Int, y:Int, z:Int):Item {
+        return items.get('$x,$y,$z');
+    }
+
+    public function removeItem(x:Int, y:Int, z:Int):Item {
+        var item = items.get('$x,$y,$z');
+        items.remove('$x,$y,$z');
+        return item;
     }
 
     public function addProjectile(projectile:Projectile):Void {
@@ -243,6 +272,7 @@ class PlayScreen extends Screen {
         addStairs();
 
         creatures = new Array<Creature>();
+        items = new Map<String, Item>();
 
         player = new Creature("@", "player", 20, 20, 0);
         addCreature(player);
@@ -253,8 +283,13 @@ class PlayScreen extends Screen {
         } while(tiles.get(player.x, player.y, player.z) != tile_floor);
         player.update();
 
+        addCreatures();
+        addItems();
+    }
+
+    private function addCreatures():Void {
         for (z in 0 ... tiles.depth) {
-            for (i in 0 ...  15 + z) {
+            for (i in 0 ... 15 + z) {
                 var creature = Factory.enemy();
                 addCreature(creature);
                 do {
@@ -263,6 +298,21 @@ class PlayScreen extends Screen {
                     creature.z = z;
                 } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
                 creature.update();
+            }
+        }
+    }
+
+    private function addItems():Void {
+        for (z in 0 ... tiles.depth) {
+            for (i in 0 ... 5 + Math.floor(z/2)) {
+                var item = Factory.item();
+                var x = 0;
+                var y = 0;
+                do {
+                    x = Math.floor(Math.random() * (tiles.width - 20) + 10);
+                    y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+                } while(tiles.get(x, y, z) != tile_floor);
+                addItem(item, x, y, z);
             }
         }
     }

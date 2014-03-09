@@ -23,6 +23,8 @@ class Creature {
     public var light:Shadowcaster;
     public var dice:Array<Int>;
 
+    public var rangedWeapon:Item;
+
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
         this.glyph = glyph;
         this.name = name;
@@ -47,6 +49,23 @@ class Creature {
             return;
         
         move(mx, my, 0);
+    }
+
+    public function pickupItem():Void {
+        var item = world.removeItem(x, y, z);
+        if (item == null) {
+            world.addMessage('$name grabs at the ground');
+        } else {
+            if (item.type == "ranged") {
+                if (rangedWeapon == null) {
+                    world.addMessage('$name grabs a ${item.name} off the ground');
+                } else {
+                    world.addItem(rangedWeapon, x, y, z);
+                    world.addMessage('$name swaps his ${rangedWeapon.name} for the ${item.name} on the ground');
+                }
+                rangedWeapon = item;
+            }
+        }
     }
 
     public function move(mx:Int, my:Int, mz:Int):Void {
