@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	<meta title="DiceMiner" package="com.example.diceminer" version="1.0.0" company="Trystan" />
+	<app main="Main" path="Export" file="DiceMiner" />
+    <window width="1024" height="768" />
+
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	
+	<assets path="Assets" rename="assets" exclude="openfl.svg" />
+	<icon path="Assets/openfl.svg" />
+</project>
