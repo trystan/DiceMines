@@ -78,7 +78,7 @@ class PlayScreen extends Screen {
         if (isAnimating)
             return;
 
-        if (key == "f")
+        if (key == "f" && player.rangedWeapon != null)
             enter(new AimScreen(this, player, function(x:Int,y:Int):Void {
                 player.rangedAttack(x, y);
                 updateAfterAnimating = true;
@@ -148,22 +148,26 @@ class PlayScreen extends Screen {
             display.write("*", p.x, p.y, new Color(200, 0, 0).toInt(), g.bg.toInt());
         }
 
-        var x = display.widthInCharacters - 12;
+        var x = display.widthInCharacters - 16;
         var y = 1;
         var fg = new Color(200, 200, 200).toInt();
         var bg = new Color(0, 0, 0).toInt();
-        display.write(player.name + " " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
+        display.write(player.name + " " + player.hp + "/" + player.maxHp, x, y++, fg, bg);
+        display.write(' ' + (player.meleeWeapon == null ? "- no sword -" : player.meleeWeapon.name), x, y++, fg, bg);
+        display.write(' ' + (player.rangedWeapon == null ? "- no bow -" : player.rangedWeapon.name), x, y++, fg, bg);
+        display.write(' ' + (player.armor == null ? "- no armor -" : player.armor.name), x, y++, fg, bg);
+
 
         x = 1;
         y = 1;
         var item = getItem(player.x, player.y, player.z);
         if (item == null)
-            y += 2;
+            y++;
         else
-            display.write('[g]et ${item.name}', x, y += 2, fg, bg);
+            display.write('[g]et ${item.name}', x, y++, fg, bg);
 
         if (player.rangedWeapon != null)
-            display.write('[f]ire ${player.rangedWeapon.name}', x, y += 2, fg, bg);
+            display.write('[f]ire ${player.rangedWeapon.name}', x, y++, fg, bg);
 
         var y = display.heightInCharacters - messages.length;
         for (message in messages)
@@ -298,7 +302,7 @@ class PlayScreen extends Screen {
     private function addCreatures():Void {
         for (z in 0 ... tiles.depth) {
             for (i in 0 ... 15 + z) {
-                var creature = Factory.enemy();
+                var creature = Factory.enemy(z);
                 addCreature(creature);
                 do {
                     creature.x = Math.floor(Math.random() * (tiles.width - 20) + 10);

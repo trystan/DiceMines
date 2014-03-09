@@ -25,4 +25,18 @@ class Item {
         evasionStat = "0d0+0";
         resistanceStat = "0d0+0";
     }
+
+    public function describe():String {
+        var parts = new Array<String>();
+
+        if (accuracyStat != "0d0+0") parts.push("accuracy " + accuracyStat);
+        if (damageStat != "0d0+0") parts.push("damage " + damageStat);
+        if (evasionStat != "0d0+0") parts.push("evasion " + evasionStat);
+        if (resistanceStat != "0d0+0") parts.push("resistance " + resistanceStat);
+
+        if (parts.length == 0)
+            return name;
+        else
+            return '$name (${parts.join(", ")})';
+    }
 }

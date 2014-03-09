@@ -11,6 +11,7 @@ class Creature {
     public var name:String;
     public var fullName:String;
 
+    public var gender:String;
     public var hp:Int = 20;
     public var maxHp:Int = 20;
     public var isAlive:Bool = true;
@@ -27,10 +28,11 @@ class Creature {
     public var meleeWeapon:Item;
     public var armor:Item;
 
-    public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
+    public function new(glyph:String, name:String, x:Int, y:Int, z:Int, gender:String = null) {
         this.glyph = glyph;
         this.name = name;
         this.fullName = glyph == "@" ? name : ("the " + name);
+        this.gender = gender == null ? (Math.random() < 0.5 ? "m" : "f") : gender;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -41,6 +43,14 @@ class Creature {
         damageStat = "3d3+3";
         evasionStat = "3d3+3";
         resistanceStat = "3d3+3";
+    }
+
+    public function getPronoun():String {
+        switch (gender) {
+            case "m": return "him";
+            case "f": return "her";
+            default: return "it";
+        }
     }
 
     public function doAi():Void {
@@ -59,29 +69,20 @@ class Creature {
             world.addMessage('$name grabs at the ground');
         } else {
             if (item.type == "ranged") {
-                if (rangedWeapon == null) {
-                    world.addMessage('$name grabs a ${item.name} off the ground');
-                } else {
+                if (rangedWeapon != null)
                     world.addItem(rangedWeapon, x, y, z);
-                    world.addMessage('$name swaps his ${rangedWeapon.name} for the ${item.name} on the ground');
-                }
                 rangedWeapon = item;
+                world.addMessage('$name weilds a ${item.describe()}');
             } else if (item.type == "melee") {
-                if (meleeWeapon == null) {
-                    world.addMessage('$name grabs a ${item.name} off the ground');
-                } else {
+                if (meleeWeapon != null)
                     world.addItem(meleeWeapon, x, y, z);
-                    world.addMessage('$name swaps his ${meleeWeapon.name} for the ${item.name} on the ground');
-                }
                 meleeWeapon = item;
+                world.addMessage('$name weilds a ${item.describe()}');
             } else if (item.type == "armor") {
-                if (armor == null) {
-                    world.addMessage('$name grabs a ${item.name} off the ground');
-                } else {
+                if (armor != null)
                     world.addItem(armor, x, y, z);
-                    world.addMessage('$name swaps his ${armor.name} for the ${item.name} on the ground');
-                }
                 armor = item;
+                world.addMessage('$name wears a ${item.describe()}');
             }
         }
     }
@@ -142,7 +143,7 @@ class Creature {
         if (actualDamage == 0)
             world.addMessage('${fullName} deflected ${projectile.owner.fullName} by ${resistance - damage} ($effectiveResistanceStat resistance vs ${projectile.damageStat} damage)');
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills it (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
+            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills ${getPronoun()} (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
         else
             world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
 
@@ -182,11 +183,13 @@ class Creature {
         var resistance = Dice.roll(effectiveResistanceStat);
 
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
+        if (damage == resistance)
+            actualDamage = 1;
 
         if (actualDamage == 0)
             world.addMessage('${other.fullName} deflected $fullName by ${resistance - damage} ($effectiveResistanceStat resistance vs $effectiveDamageStat damage)');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills it ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
+            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills ${getPronoun()} ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
         else
             world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
 
