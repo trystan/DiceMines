@@ -21,10 +21,14 @@ class PlayScreen extends Screen {
     private var player:Creature;
     private var creatures:Array<Creature>;
     private var messages:Array<String>;
+    private var projectiles:Array<Projectile>;
+    private var isAnimating:Bool = false;
+    private var updateAfterAnimating:Bool = false;
 
     public function new() {
         super();
         messages = new Array<String>();
+        projectiles = new Array<Projectile>();
         worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 20);
 
         on("<", move, { x:0,  y:0,  z:-1 });
@@ -34,12 +38,20 @@ class PlayScreen extends Screen {
         on("up", move, { x:0, y:-1, z:0 });
         on("down", move, { x:0, y:1, z:0 });
         on(".", move, { x:0,  y:0,  z:0  });
+        on("keypress", doAction);
+        on("tick", animate);
         on("draw", draw);
     }
 
     private function move(by: { x:Int, y:Int, z:Int } ):Void {
-        player.move(by.x, by.y, by.z);
+        if (isAnimating)
+            return;
 
+        player.move(by.x, by.y, by.z);
+        update();
+    }
+
+    private function update():Void {
         for (c in creatures) {
             if (c.isAlive && c != player)
                 c.doAi();
@@ -60,8 +72,47 @@ class PlayScreen extends Screen {
             rl.trigger("redraw");
         }
     }
+
+    private function doAction(key:String):Void {
+        if (isAnimating)
+            return;
+
+        if (key == "f")
+            enter(new AimScreen(this, player, function(x:Int,y:Int):Void {
+                player.rangedAttack(x, y);
+                updateAfterAnimating = true;
+            }));
+
+        rl.trigger("redraw");
+    }
+
+    private function animate():Void {
+        if (projectiles.length == 0) {
+            isAnimating = false;
+            if (updateAfterAnimating)
+                update();
+            updateAfterAnimating = false;
+            return;
+        }
+
+        isAnimating = true;
+
+        var stillAlive = new Array<Projectile>();
+        for (p in projectiles) {
+            p.update();
+            var c = getCreature(p.x, p.y, p.z);
+            if (c != null)
+                c.takeRangedAttack(p);
+            else if (blocksMovement(p.x, p.y, p.z))
+                p.isDone = true;
+            else if (!p.isDone)
+                stillAlive.push(p);
+        }
+        projectiles = stillAlive;
+        rl.trigger("redraw");
+    }
     
-    private function draw(display:AsciiDisplay):Void {
+    public function draw(display:AsciiDisplay):Void {
         display.clear();
 
         for (x in 0 ... tiles.width)
@@ -81,17 +132,30 @@ class PlayScreen extends Screen {
             display.write(c.glyph, c.x, c.y, color.toInt(), g.bg.toInt());
         }
 
+        for (p in projectiles) {
+            if (p.z != player.z || !player.light.isLit(p.x, p.y))
+                continue;
+
+            var g = getGraphic(p.x, p.y, p.z);
+            display.write("*", p.x, p.y, new Color(200, 0, 0).toInt(), g.bg.toInt());
+        }
+
         var x = display.widthInCharacters - 12;
         var y = 2;
         var fg = new Color(200, 200, 200).toInt();
         var bg = new Color(0, 0, 0).toInt();
         display.write("hp " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
 
+        x = 2;
+        y = 2;
+        display.write("[f]ire bow", x, y += 2, fg, bg);
+
         var y = display.heightInCharacters - messages.length;
         for (message in messages)
             display.writeCenter(message, y++, fg, bg);
 
-        messages = new Array<String>();
+        if (!isAnimating)
+            messages = new Array<String>();
         display.update();
     }
 
@@ -123,6 +187,10 @@ class PlayScreen extends Screen {
 
     public function addMessage(text:String):Void {
         messages.push(text);
+    }
+
+    public function addProjectile(projectile:Projectile):Void {
+        projectiles.push(projectile);
     }
 
     public function addCreature(creature:Creature):Void {

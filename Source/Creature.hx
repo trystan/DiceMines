@@ -66,6 +66,37 @@ class Creature {
         }
     }
 
+    public function rangedAttack(tx:Int, ty:Int):Void {
+        var p = new Projectile(x, y, z, tx, ty, this);
+        world.addProjectile(p);
+    }
+
+    public function takeRangedAttack(projectile:Projectile):Void {
+        var accuracy = Dice.roll(projectile.accuracyStat);
+        var evasion = Dice.roll(evasionStat);
+
+        if (accuracy < evasion) {
+            world.addMessage('${projectile.owner.fullName} misses ${fullName} (${projectile.accuracyStat} accuracy vs $evasionStat evasion)');
+            return;
+        }
+
+        var damage = Dice.roll(projectile.damageStat);
+        var resistance = Dice.roll(resistanceStat);
+        var actualDamage = Math.floor(Math.max(0, damage - resistance));
+
+        if (actualDamage == 0)
+            world.addMessage('${fullName} deflected ${projectile.owner.fullName} (${resistanceStat} resistance vs ${projectile.damageStat} damage)');
+        else if (actualDamage >= hp)
+            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills it (${projectile.damageStat} damge vs $resistanceStat resistance)');
+        else
+            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage (${projectile.damageStat} damge vs $resistanceStat resistance)');
+
+        hp -= actualDamage;
+
+        if (hp < 1)
+            projectile.owner.gainDice(3);
+    }
+
     public function attack(other:Creature):Void {
         if (glyph != "@" && other.glyph != "@")
             return;
@@ -95,7 +126,7 @@ class Creature {
             gainDice(3);
     }
 
-    public function gainDice(amound:Int):Void {
+    public function gainDice(amount:Int):Void {
         for (i in 0 ... amount) {
             var sides = Math.floor(Math.min(Dice.roll("1d9+0"), Dice.roll("1d9+0")));
             world.addMessage('$fullName gains a d$sides');
