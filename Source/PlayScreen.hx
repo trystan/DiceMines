@@ -169,8 +169,10 @@ class PlayScreen extends Screen {
         for (message in messages)
             display.writeCenter(message, y++, fg, bg);
 
-        if (!isAnimating)
-            messages = new Array<String>();
+        if (!isAnimating) {
+            while (messages.length > 5)
+                messages.shift();
+        }
         display.update();
     }
 

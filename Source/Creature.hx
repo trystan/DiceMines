@@ -105,28 +105,46 @@ class Creature {
 
     public function rangedAttack(tx:Int, ty:Int):Void {
         var p = new Projectile(x, y, z, tx, ty, this);
+        
+        p.accuracyStat = accuracyStat;
+        if (rangedWeapon != null) p.accuracyStat = Dice.add(p.accuracyStat, rangedWeapon.accuracyStat);
+        if (armor != null) p.accuracyStat = Dice.add(p.accuracyStat, armor.accuracyStat);
+
+        p.damageStat = damageStat;
+        if (rangedWeapon != null) p.damageStat = Dice.add(p.damageStat, rangedWeapon.damageStat);
+        if (armor != null) p.damageStat = Dice.add(p.damageStat, armor.damageStat);
+
         world.addProjectile(p);
     }
 
     public function takeRangedAttack(projectile:Projectile):Void {
         var accuracy = Dice.roll(projectile.accuracyStat);
-        var evasion = Dice.roll(evasionStat);
+
+        var effectiveEvasionStat = evasionStat;
+        if (meleeWeapon != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, meleeWeapon.evasionStat);
+        if (armor != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, armor.evasionStat);
+        var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('${projectile.owner.fullName} misses ${fullName} (${projectile.accuracyStat} accuracy vs $evasionStat evasion)');
+            world.addMessage('${projectile.owner.fullName} misses ${fullName} (${projectile.accuracyStat} accuracy vs $effectiveEvasionStat evasion)');
             return;
         }
 
         var damage = Dice.roll(projectile.damageStat);
-        var resistance = Dice.roll(resistanceStat);
+
+        var effectiveResistanceStat = evasionStat;
+        if (meleeWeapon != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, meleeWeapon.resistanceStat);
+        if (armor != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, armor.resistanceStat);
+        var resistance = Dice.roll(effectiveResistanceStat);
+
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
 
         if (actualDamage == 0)
-            world.addMessage('${fullName} deflected ${projectile.owner.fullName} (${resistanceStat} resistance vs ${projectile.damageStat} damage)');
+            world.addMessage('${fullName} deflected ${projectile.owner.fullName} ($effectiveResistanceStat resistance vs ${projectile.damageStat} damage)');
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills it (${projectile.damageStat} damge vs $resistanceStat resistance)');
+            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills it (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
         else
-            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage (${projectile.damageStat} damge vs $resistanceStat resistance)');
+            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
 
         hp -= actualDamage;
 
@@ -138,24 +156,39 @@ class Creature {
         if (glyph != "@" && other.glyph != "@")
             return;
 
-        var accuracy = Dice.roll(accuracyStat);
-        var evasion = Dice.roll(other.evasionStat);
+        var effectiveAccuracyStat = accuracyStat;
+        if (meleeWeapon != null) effectiveAccuracyStat = Dice.add(effectiveAccuracyStat, meleeWeapon.accuracyStat);
+        if (armor != null) effectiveAccuracyStat = Dice.add(effectiveAccuracyStat, armor.accuracyStat);
+        var accuracy = Dice.roll(effectiveAccuracyStat);
+
+        var effectiveEvasionStat = other.evasionStat;
+        if (other.meleeWeapon != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, other.meleeWeapon.evasionStat);
+        if (other.armor != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, other.armor.evasionStat);
+        var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName misses ${other.fullName} ($accuracyStat accuracy vs ${other.evasionStat} evasion)');
+            world.addMessage('$fullName misses ${other.fullName} ($effectiveAccuracyStat accuracy vs ${effectiveEvasionStat} evasion)');
             return;
         }
 
-        var damage = Dice.roll(damageStat);
-        var resistance = Dice.roll(other.resistanceStat);
+        var effectiveDamageStat = damageStat;
+        if (meleeWeapon != null) effectiveDamageStat = Dice.add(effectiveDamageStat, meleeWeapon.damageStat);
+        if (armor != null) effectiveDamageStat = Dice.add(effectiveDamageStat, armor.damageStat);
+        var damage = Dice.roll(effectiveDamageStat);
+
+        var effectiveResistanceStat = other.resistanceStat;
+        if (other.meleeWeapon != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, other.meleeWeapon.resistanceStat);
+        if (other.armor != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, other.armor.resistanceStat);
+        var resistance = Dice.roll(effectiveResistanceStat);
+
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
 
         if (actualDamage == 0)
-            world.addMessage('${other.fullName} deflected $fullName (${other.resistanceStat} resistance vs $damageStat damage)');
+            world.addMessage('${other.fullName} deflected $fullName ($effectiveResistanceStat resistance vs $effectiveDamageStat damage)');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills it ($damageStat damge vs ${other.resistanceStat} resistance)');
+            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills it ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
         else
-            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($damageStat damge vs ${other.resistanceStat} resistance)');
+            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
 
         other.hp -= actualDamage;
 

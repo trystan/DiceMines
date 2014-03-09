@@ -9,6 +9,22 @@ class Dice {
         return total;
     }
 
+    public static function add(a:String, b:String):String {
+        var numberA = Std.parseInt(a.split("d")[0]);
+        var sidesA = Std.parseInt(a.split("d")[1].split("+")[0]);
+        var bonusA = Std.parseInt(a.split("+")[1]);
+
+        var numberB = Std.parseInt(b.split("d")[0]);
+        var sidesB = Std.parseInt(b.split("d")[1].split("+")[0]);
+        var bonusB = Std.parseInt(b.split("+")[1]);
+
+        var numberC = numberA + numberB;
+        var sidesC = sidesA + sidesB;
+        var bonusC = bonusA + bonusB;
+
+        return numberC + "d" + sidesC + "+" + bonusC;
+    }
+
     public static function roll(what:String):Int {
         var number = Std.parseInt(what.split("d")[0]);
         var sides = Std.parseInt(what.split("d")[1].split("+")[0]);

@@ -38,15 +38,23 @@ class Factory {
     }
 
     public static function rangedWeapon():Item {
-        return new Item(")", Color.hsv(30, 80, 80), "ranged", "short bow");
+        var i = new Item(")", Color.hsv(30, 80, 80), "ranged", "short bow");
+        i.accuracyStat = "1d2+0";
+        i.damageStat = "1d2+0";
+        return i;
     }
 
     public static function meleeWeapon():Item {
-        return new Item("|", Color.hsv(200, 20, 80), "melee", "short sword");
+        var i = new Item("|", Color.hsv(200, 20, 80), "melee", "short sword");
+        i.accuracyStat = "1d2+0";
+        i.damageStat = "1d2+0";
+        return i;
     }
 
     public static function armor():Item {
-        return new Item("[", Color.hsv(60, 50, 80), "armor", "light armor");
+        var i = new Item("[", Color.hsv(60, 50, 80), "armor", "light armor");
+        i.resistanceStat = "1d1+0";
+        return i;
     }
 
     public static function item():Item {
