@@ -51,10 +51,12 @@ class PlayScreen extends Screen {
         }
         creatures = stillAlive;
 
-        if (!player.isAlive)
-            switchTo(new EndScreen());
-
         rl.trigger("redraw");
+
+        if (!player.isAlive) {
+            switchTo(new EndScreen());
+            rl.trigger("redraw");
+        }
     }
     
     private function draw(display:AsciiDisplay):Void {
@@ -76,6 +78,13 @@ class PlayScreen extends Screen {
             var color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(0, 20, 90);
             display.write("@", c.x, c.y, color.toInt(), g.bg.toInt());
         }
+
+        var x = display.widthInCharacters - 12;
+        var y = 2;
+        var fg = new Color(200, 200, 200).toInt();
+        var bg = new Color(0, 0, 0).toInt();
+        display.write("hp " + player.hp + "/" + player.maxHp, x, y += 2, fg, bg);
+
         display.update();
     }
 
