@@ -4,25 +4,25 @@ class Factory {
 
     public static function spider():Creature {
         var c = new Creature("s", "spider", 0, 0, 0);
-        c.accuracyStat = "7d7+7";
+        c.accuracyStat = "5d5+5";
         return c;
     }
 
     public static function bear():Creature {
         var c = new Creature("b", "bear", 0, 0, 0);
-        c.damageStat = "7d7+7";
+        c.damageStat = "5d5+5";
         return c;
     }
 
     public static function ghost():Creature {
         var c = new Creature("g", "ghost", 0, 0, 0);
-        c.evasionStat = "6d6+6";
+        c.evasionStat = "5d5+5";
         return c;
     }
 
     public static function elemental():Creature {
         var c = new Creature("e", "earth elemental", 0, 0, 0);
-        c.resistanceStat = "6d6+6";
+        c.resistanceStat = "5d5+5";
         return c;
     }
 

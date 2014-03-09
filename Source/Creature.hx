@@ -21,6 +21,7 @@ class Creature {
     public var resistanceStat:String;
 
     public var light:Shadowcaster;
+    public var dice:Array<Int>;
 
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int) {
         this.glyph = glyph;
@@ -30,10 +31,12 @@ class Creature {
         this.y = y;
         this.z = z;
 
-        accuracyStat = "5d5+5";
-        damageStat = "5d5+5";
-        evasionStat = "4d4+4";
-        resistanceStat = "4d4+4";
+        this.dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+        accuracyStat = "3d3+3";
+        damageStat = "3d3+3";
+        evasionStat = "3d3+3";
+        resistanceStat = "3d3+3";
     }
 
     public function doAi():Void {
@@ -87,6 +90,17 @@ class Creature {
             world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($damageStat damge vs ${other.resistanceStat} resistance)');
 
         other.hp -= actualDamage;
+
+        if (other.hp < 1)
+            gainDice(3);
+    }
+
+    public function gainDice(amound:Int):Void {
+        for (i in 0 ... amount) {
+            var sides = Math.floor(Math.min(Dice.roll("1d9+0"), Dice.roll("1d9+0")));
+            world.addMessage('$fullName gains a d$sides');
+            dice[sides - 1] += 1;
+        }
     }
 
     public function update():Void {
