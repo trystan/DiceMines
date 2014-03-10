@@ -72,6 +72,9 @@ class Creature {
                 newCounters.push(c-1);
             }
         }
+        if (offBalanceCounters.length > 0 && newCounters.length == 0)
+            world.addMessage('$fullName recovers ${getPronoun()} balance');
+
         offBalanceCounters = newCounters;
     }
 
@@ -135,6 +138,16 @@ class Creature {
     }
 
     public function rangedAttack(tx:Int, ty:Int):Void {
+        var distance = Math.floor(Math.sqrt((x-tx)*(x-tx) + (y-ty)*(y-ty)));
+        for (i in 0 ... distance) {
+            if (Math.random() > 0.2)
+                continue;
+
+            if (Math.random() < 0.5)
+                tx += Math.floor(Math.random() * 3) - 1;
+            else
+                ty += Math.floor(Math.random() * 3) - 1;
+        }
         var p = new Projectile(x, y, z, tx, ty, this);
         
         p.accuracyStat = accuracyStat;
