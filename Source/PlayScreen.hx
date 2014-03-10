@@ -90,7 +90,12 @@ class PlayScreen extends Screen {
     }
 
     private function animate():Void {
-        if (projectiles.length == 0) {
+        var inAir = new Array<Creature>();
+        for (c in creatures) {
+            if (c.knockbackPath != null && c.knockbackPath.length > 0)
+                inAir.push(c);
+        }
+        if (projectiles.length == 0 && inAir.length == 0) {
             isAnimating = false;
             if (updateAfterAnimating)
                 update();
@@ -99,6 +104,16 @@ class PlayScreen extends Screen {
         }
 
         isAnimating = true;
+
+        for (c in inAir) {
+            var p = c.knockbackPath.shift();
+            if (blocksMovement(p.x, p.y, c.z)) {
+                c.knockbackPath = null;
+            } else {
+                c.x = p.x;
+                c.y = p.y;
+            }
+        }
 
         var stillAlive = new Array<Projectile>();
         for (p in projectiles) {
@@ -287,6 +302,7 @@ class PlayScreen extends Screen {
         items = new Map<String, Item>();
 
         player = new Creature("@", "player", 20, 20, 0);
+        player.damageStat = "5d5+5";
         addCreature(player);
         player.light = new Shadowcaster();
         do {

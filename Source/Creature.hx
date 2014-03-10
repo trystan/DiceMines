@@ -1,5 +1,7 @@
 package;
 
+import knave.IntPoint;
+import knave.Bresenham;
 import knave.Shadowcaster;
 
 class Creature {
@@ -20,6 +22,9 @@ class Creature {
     public var damageStat:String;
     public var evasionStat:String;
     public var resistanceStat:String;
+    public var offBalanceCounters:Array<Int>;
+    public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
+    public var knockbackPath:Array<IntPoint>;
 
     public var light:Shadowcaster;
     public var dice:Array<Int>;
@@ -37,12 +42,37 @@ class Creature {
         this.y = y;
         this.z = z;
 
-        this.dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        offBalanceCounters = new Array<Int>();
+        wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
         accuracyStat = "3d3+3";
         damageStat = "3d3+3";
         evasionStat = "3d3+3";
         resistanceStat = "3d3+3";
+    }
+
+    public function loseBalance(amount:Int):Void {
+        offBalanceCounters.push(3);
+        accuracyStat = Dice.add(accuracyStat, "-2d2+0");
+        damageStat = Dice.add(damageStat, "-2d2+0");
+        evasionStat = Dice.add(evasionStat, "-2d2+0");
+        resistanceStat = Dice.add(resistanceStat, "-2d2+0");
+    }
+
+    public function recoverBalance():Void {
+        var newCounters = new Array<Int>();
+        for (c in offBalanceCounters) {
+            if (c == 0) {
+                accuracyStat = Dice.add(accuracyStat, "2d2+0");
+                damageStat = Dice.add(damageStat, "2d2+0");
+                evasionStat = Dice.add(evasionStat, "2d2+0");
+                resistanceStat = Dice.add(resistanceStat, "2d2+0");
+            } else {
+                newCounters.push(c-1);
+            }
+        }
+        offBalanceCounters = newCounters;
     }
 
     public function getPronoun():String {
@@ -127,9 +157,16 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('${projectile.owner.fullName} misses ${fullName} by ${evasion - accuracy} (${projectile.accuracyStat} accuracy vs $effectiveEvasionStat evasion)');
+            if (evasion > accuracy * 2)
+                world.addMessage('$fullName critically evades ${projectile.owner.fullName} by ${evasion - accuracy}');
+            else
+                world.addMessage('$fullName evades ${projectile.owner.fullName} by ${evasion - accuracy}');
             return;
         }
+
+        var isCriticalHit = accuracy > evasion * 2;
+        if (isCriticalHit) takeCriticalHit();
+        var hitType = isCriticalHit ? "criticaly hits" : "hits";
 
         var damage = Dice.roll(projectile.damageStat);
 
@@ -139,18 +176,83 @@ class Creature {
         var resistance = Dice.roll(effectiveResistanceStat);
 
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
+        if (damage == resistance)
+            actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('${fullName} deflected ${projectile.owner.fullName} by ${resistance - damage} ($effectiveResistanceStat resistance vs ${projectile.damageStat} damage)');
+            if (resistance > damage * 2)
+                world.addMessage('$fullName critically resisted ${projectile.owner.fullName} by ${resistance - damage}');
+            else
+                world.addMessage('$fullName resisted ${projectile.owner.fullName} by ${resistance - damage}');
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage and kills ${getPronoun()} (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
+            if (damage > resistance * 2)
+                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage critical damage and kills');
+            else
+                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage damage and kills');
         else
-            world.addMessage('${projectile.owner.fullName} hit $fullName for $actualDamage damage (${projectile.damageStat} damge vs $effectiveResistanceStat resistance)');
+            if (damage > resistance * 2)
+                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage critical damage');
+            else
+                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage damage');
 
-        hp -= actualDamage;
+        if (damage > resistance * 2)
+            knockback(projectile.owner, resistance - damage);
+
+        takeDamage(actualDamage, projectile.owner);
+    }
+
+    public function knockback(attacker:Creature, amount:Int):Void {
+        amount = Math.floor(Math.abs(amount));
+
+        var dx = x - attacker.x + Math.random() - 0.5;
+        var dy = y - attacker.y + Math.random() - 0.5;
+
+        dx *= amount;
+        dy *= amount;
+
+        knockbackPath = Bresenham.line(x, y, x + Math.floor(dx), y + Math.floor(dy)).points;
+        while (knockbackPath.length > amount)
+            knockbackPath.pop();
+    }
+
+    public function takeCriticalHit():Void {
+        var stats = ["accuracy", "evasion", "damage", "resistance"];
+        var modifiers = ["-1d0+0", "-1d0+0", "-0d1+0", "-0d1+0", "-1d1+0"];
+
+
+        var wound = { countdown: 100, stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
+        switch (wound.stat) {
+            case "accuracy": accuracyStat = Dice.add(accuracyStat, wound.modifier);
+            case "evasion": evasionStat = Dice.add(evasionStat, wound.modifier);
+            case "damage": damageStat = Dice.add(damageStat, wound.modifier);
+            case "resistance": resistanceStat = Dice.add(resistanceStat, wound.modifier);
+        }
+        wounds.push(wound);
+    }
+
+    public function recoverFromWounds():Void {
+        var newWounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
+        for (w in wounds) {
+                switch (w.stat) {
+                    case "accuracy": accuracyStat = Dice.subtract(accuracyStat, w.modifier);
+                    case "evasion": evasionStat = Dice.subtract(evasionStat, w.modifier);
+                    case "damage": damageStat = Dice.subtract(damageStat, w.modifier);
+                    case "resistance": resistanceStat = Dice.subtract(resistanceStat, w.modifier);
+                }
+            if (w.countdown == 0) {
+            } else {
+                w.countdown--;
+                newWounds.push(w);
+            }
+        }
+        wounds = newWounds;
+    }
+
+    public function takeDamage(amount:Int, attacker:Creature):Void {
+        hp -= amount;
 
         if (hp < 1)
-            projectile.owner.gainDice(3);
+            attacker.gainDice(3);
     }
 
     public function attack(other:Creature):Void {
@@ -168,9 +270,17 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName misses ${other.fullName} by ${evasion - accuracy} ($effectiveAccuracyStat accuracy vs ${effectiveEvasionStat} evasion)');
+            if (evasion > accuracy * 2) {
+                loseBalance(evasion - accuracy);
+                world.addMessage('${other.fullName} critically evades $fullName by ${evasion - accuracy}, leaving ${getPronoun()} off balance');
+            } else
+                world.addMessage('${other.fullName} evades $fullName by ${evasion - accuracy}');
             return;
         }
+
+        var isCriticalHit = accuracy > evasion * 2;
+        if (isCriticalHit) takeCriticalHit();
+        var hitType = isCriticalHit ? "criticaly hits" : "hits";
 
         var effectiveDamageStat = damageStat;
         if (meleeWeapon != null) effectiveDamageStat = Dice.add(effectiveDamageStat, meleeWeapon.damageStat);
@@ -187,16 +297,26 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('${other.fullName} deflected $fullName by ${resistance - damage} ($effectiveResistanceStat resistance vs $effectiveDamageStat damage)');
+            if (resistance > damage * 2) {
+                world.addMessage('${other.fullName} critically resisted $fullName by ${resistance - damage}, hurting $fullName by that much');
+                takeDamage(resistance - damage, other);
+            } else
+                world.addMessage('${other.fullName} resisted $fullName by ${resistance - damage}');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage and kills ${getPronoun()} ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
+            if (damage > resistance * 2)
+                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage critical damage and kills ${getPronoun()}');
+            else
+                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage damage and kills ${getPronoun()}');
         else
-            world.addMessage('$fullName hit ${other.fullName} for $actualDamage damage ($effectiveDamageStat damge vs $effectiveResistanceStat resistance)');
+            if (damage > resistance * 2)
+                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage critical damage');
+            else
+                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage damage');
 
-        other.hp -= actualDamage;
+        if (damage > resistance * 2)
+            other.knockback(this, resistance - damage);
 
-        if (other.hp < 1)
-            gainDice(3);
+        other.takeDamage(actualDamage, this);
     }
 
     public function gainDice(amount:Int):Void {
@@ -210,11 +330,14 @@ class Creature {
     }
 
     public function update():Void {
-        var fallDistance = 0;
-        while (world.isEmptySpace(x, y, z)) {
-            z++;
-            fallDistance++;
-        }
+        recoverBalance();
+        recoverFromWounds();
+
+            var fallDistance = 0;
+            while (world.isEmptySpace(x, y, z)) {
+                z++;
+                fallDistance++;
+            }
 
         if (fallDistance > 0) {
             world.addMessage('$name falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
