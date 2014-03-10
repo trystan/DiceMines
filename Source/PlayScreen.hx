@@ -327,6 +327,34 @@ class PlayScreen extends Screen {
             });
         }});
 
+        player.actions.push({ name:"[a]ccuracy boost", callback: function(world:PlayScreen, self:Creature):Void {
+            self.accuracyStat = Dice.add(self.accuracyStat, "2d2+2");
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.accuracyStat = Dice.subtract(self.accuracyStat, "2d2+2");
+            });
+        }});
+
+        player.actions.push({ name:"[e]vasion boost", callback: function(world:PlayScreen, self:Creature):Void {
+            self.evasionStat = Dice.add(self.evasionStat, "2d2+2");
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.evasionStat = Dice.subtract(self.evasionStat, "2d2+2");
+            });
+        }});
+
+        player.actions.push({ name:"[d]amage boost", callback: function(world:PlayScreen, self:Creature):Void {
+            self.damageStat = Dice.add(self.damageStat, "2d2+2");
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.damageStat = Dice.subtract(self.damageStat, "2d2+2");
+            });
+        }});
+
+        player.actions.push({ name:"[r]esistance boost", callback: function(world:PlayScreen, self:Creature):Void {
+            self.resistanceStat = Dice.add(self.resistanceStat, "2d2+2");
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.resistanceStat = Dice.subtract(self.resistanceStat, "2d2+2");
+            });
+        }});
+
         addCreature(player);
         player.light = new Shadowcaster();
         do {
