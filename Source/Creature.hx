@@ -57,7 +57,7 @@ class Creature {
     }
 
     public function loseBalance(amount:Int):Void {
-        offBalanceCounters.push(3);
+        offBalanceCounters.push(amount);
         accuracyStat = Dice.add(accuracyStat, "-2d2+0");
         damageStat = Dice.add(damageStat, "-2d2+0");
         evasionStat = Dice.add(evasionStat, "-2d2+0");
@@ -77,7 +77,7 @@ class Creature {
             }
         }
         if (offBalanceCounters.length > 0 && newCounters.length == 0)
-            world.addMessage('$fullName recovers ${getPronoun()} balance');
+            world.addMessage('$fullName recovers ${getPosessivePronoun()} balance');
 
         offBalanceCounters = newCounters;
     }
@@ -87,6 +87,14 @@ class Creature {
             case "m": return "him";
             case "f": return "her";
             default: return "it";
+        }
+    }
+
+    public function getPosessivePronoun():String {
+        switch (gender) {
+            case "m": return "his";
+            case "f": return "her";
+            default: return "it's";
         }
     }
 
@@ -194,31 +202,16 @@ class Creature {
         if (actualDamage == 0)
             world.addMessage('$fullName resists ${projectile.owner.fullName} by ${resistance - damage}');
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage and kills');
+            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage and kills ${getPronoun()}');
         else
             world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage');
 
         takeDamage(actualDamage, projectile.owner);
 
-        for (func in projectile.owner.nextAttackEffects)
-            func(projectile.owner, this);
-        
+        var effects = projectile.owner.nextAttackEffects;
         projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
-    }
-
-    public function takeCriticalHit():Void {
-        var stats = ["accuracy", "evasion", "damage", "resistance"];
-        var modifiers = ["-1d0+0", "-1d0+0", "-0d1+0", "-0d1+0", "-1d1+0"];
-
-
-        var wound = { countdown: 100, stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
-        switch (wound.stat) {
-            case "accuracy": accuracyStat = Dice.add(accuracyStat, wound.modifier);
-            case "evasion": evasionStat = Dice.add(evasionStat, wound.modifier);
-            case "damage": damageStat = Dice.add(damageStat, wound.modifier);
-            case "resistance": resistanceStat = Dice.add(resistanceStat, wound.modifier);
-        }
-        wounds.push(wound);
+        for (func in effects)
+            func(projectile.owner, this);
     }
 
     public function recoverFromWounds():Void {
@@ -283,16 +276,16 @@ class Creature {
         if (actualDamage == 0)
             world.addMessage('${other.fullName} resists $fullName by ${resistance - damage}');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage and kills ${getPronoun()}');
+            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage and kills ${other.getPronoun()}');
         else
             world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage');
 
         other.takeDamage(actualDamage, this);
 
-        for (func in nextAttackEffects)
-            func(this, other);
-        
+        var effects = nextAttackEffects;
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
+        for (func in effects)
+            func(this, other);
     }
 
     public function gainDice(amount:Int):Void {
@@ -316,8 +309,11 @@ class Creature {
             }
 
         if (fallDistance > 0) {
-            world.addMessage('$name falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
             hp -= fallDistance * 2;
+            if (hp < 1)
+                world.addMessage('$fullName falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"} and dies');
+            else
+                world.addMessage('$fullName falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
         }
 
         if (hp < 1)

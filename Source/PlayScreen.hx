@@ -314,6 +314,7 @@ class PlayScreen extends Screen {
 
         player = new Creature("@", "player", 20, 20, 0);
         player.actions.push({ name:"[K]nockback", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} prepares a knockback attack');
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 var dx = target.x - self.x + Math.random() - 0.5;
                 var dy = target.y - self.y + Math.random() - 0.5;
@@ -321,13 +322,59 @@ class PlayScreen extends Screen {
                 dx *= 10;
                 dy *= 10;
 
-                target.knockbackPath = Bresenham.line(self.x, self.y, self.x + Math.floor(dx), self.y + Math.floor(dy)).points;
+                target.knockbackPath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
                 while (target.knockbackPath.length > 10)
                     target.knockbackPath.pop();
             });
         }});
 
+        player.actions.push({ name:"[D]isarming attack", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} prepares to disarm someone');
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                if (target.meleeWeapon != null) {
+                    addItem(target.meleeWeapon, target.x, target.y, target.z);
+                    world.addMessage('the ${target.meleeWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+                    target.meleeWeapon = null;
+                } else if (target.rangedWeapon != null) {
+                    addItem(target.rangedWeapon, target.x, target.y, target.z);
+                    world.addMessage('the ${target.rangedWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+                    target.rangedWeapon = null;
+                } else if (target.armor != null) {
+                    addItem(target.armor, target.x, target.y, target.z);
+                    world.addMessage('the ${target.armor.name} is knocked off of ${target.fullName}\'s body'); // '
+                    target.armor = null;
+                }
+            });
+        }});
+
+        player.actions.push({ name:"[u]nbalancing attack", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} prepares an unbalancing attack');
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                target.loseBalance(3);
+                world.addMessage('${target.fullName} is unballanced');
+            });
+        }});
+
+        player.actions.push({ name:"[w]ound", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} prepares a wounding attack');
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                var stats = ["accuracy", "evasion", "damage", "resistance"];
+                var modifiers = ["-1d0+0", "-2d0+0", "-0d1+0", "-0d2+0", "-1d1+0"];
+
+                var wound = { countdown: 100, stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
+                switch (wound.stat) {
+                    case "accuracy": target.accuracyStat = Dice.add(target.accuracyStat, wound.modifier);
+                    case "evasion": target.evasionStat = Dice.add(target.evasionStat, wound.modifier);
+                    case "damage": target.damageStat = Dice.add(target.damageStat, wound.modifier);
+                    case "resistance": target.resistanceStat = Dice.add(target.resistanceStat, wound.modifier);
+                }
+                world.addMessage('${self.fullName} wounds ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
+                target.wounds.push(wound);
+            });
+        }});
+
         player.actions.push({ name:"[a]ccuracy boost", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} focuses on accuracy (2d2+2 bonus for next attack)');
             self.accuracyStat = Dice.add(self.accuracyStat, "2d2+2");
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 self.accuracyStat = Dice.subtract(self.accuracyStat, "2d2+2");
@@ -335,6 +382,7 @@ class PlayScreen extends Screen {
         }});
 
         player.actions.push({ name:"[e]vasion boost", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} focuses on evasion (2d2+2 bonus for next attack)');
             self.evasionStat = Dice.add(self.evasionStat, "2d2+2");
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 self.evasionStat = Dice.subtract(self.evasionStat, "2d2+2");
@@ -342,6 +390,7 @@ class PlayScreen extends Screen {
         }});
 
         player.actions.push({ name:"[d]amage boost", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} focuses on damage (2d2+2 bonus for next attack)');
             self.damageStat = Dice.add(self.damageStat, "2d2+2");
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 self.damageStat = Dice.subtract(self.damageStat, "2d2+2");
@@ -349,6 +398,7 @@ class PlayScreen extends Screen {
         }});
 
         player.actions.push({ name:"[r]esistance boost", callback: function(world:PlayScreen, self:Creature):Void {
+            world.addMessage('${self.fullName} focuses on resistance (2d2+2 bonus for next attack)');
             self.resistanceStat = Dice.add(self.resistanceStat, "2d2+2");
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 self.resistanceStat = Dice.subtract(self.resistanceStat, "2d2+2");
