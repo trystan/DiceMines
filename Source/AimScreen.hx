@@ -8,11 +8,14 @@ class AimScreen extends Screen {
     private var callbackFunction:Int -> Int -> Void;
     private var targetX:Int;
     private var targetY:Int;
+    private var maxDistance:Int;
+    private var isOk:Bool = true;
 
-    public function new(world:PlayScreen, player:Creature, callbackFunction: Int -> Int -> Void) {
+    public function new(world:PlayScreen, player:Creature, maxDistance:Int, callbackFunction: Int -> Int -> Void) {
         super();
         this.world = world;
         this.player = player;
+        this.maxDistance = maxDistance;
         this.callbackFunction = callbackFunction;
         targetX = player.x;
         targetY = player.y;
@@ -36,7 +39,8 @@ class AimScreen extends Screen {
 
     private function fire():Void {
         exit();
-        callbackFunction(targetX, targetY);
+        if (isOk)
+            callbackFunction(targetX, targetY);
         rl.trigger("redraw");
     }
     
@@ -48,6 +52,11 @@ class AimScreen extends Screen {
         var points = Bresenham.line(player.x, player.y, targetX, targetY).points;
         if (points.length > 0)
             points.shift();
+        isOk = points.length <= maxDistance;
+
+        if (!isOk)
+            fg = new Color(200, 0, 0).toInt();
+
         for (p in points)
             display.write(glyph, p.x, p.y, fg);
 

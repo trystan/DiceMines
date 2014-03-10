@@ -22,10 +22,9 @@ class Creature {
     public var damageStat:String;
     public var evasionStat:String;
     public var resistanceStat:String;
-    public var offBalanceCounters:Array<Int>;
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
     public var actions:Array<{ name:String, callback:PlayScreen -> Creature -> Void }>;
-    public var knockbackPath:Array<IntPoint>;
+    public var animatePath:Array<IntPoint>;
     public var nextAttackEffects:Array<Creature -> Creature -> Void>;
 
     public var light:Shadowcaster;
@@ -45,8 +44,7 @@ class Creature {
         this.z = z;
 
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
-        dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-        offBalanceCounters = new Array<Int>();
+        dice = [5, 4, 3, 2, 1, 0, 0, 0, 0];
         actions = new Array<{ name:String, callback:PlayScreen -> Creature -> Void }>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
@@ -54,32 +52,6 @@ class Creature {
         damageStat = "3d3+3";
         evasionStat = "3d3+3";
         resistanceStat = "3d3+3";
-    }
-
-    public function loseBalance(amount:Int):Void {
-        offBalanceCounters.push(amount);
-        accuracyStat = Dice.add(accuracyStat, "-2d2+0");
-        damageStat = Dice.add(damageStat, "-2d2+0");
-        evasionStat = Dice.add(evasionStat, "-2d2+0");
-        resistanceStat = Dice.add(resistanceStat, "-2d2+0");
-    }
-
-    public function recoverBalance():Void {
-        var newCounters = new Array<Int>();
-        for (c in offBalanceCounters) {
-            if (c == 0) {
-                accuracyStat = Dice.add(accuracyStat, "2d2+0");
-                damageStat = Dice.add(damageStat, "2d2+0");
-                evasionStat = Dice.add(evasionStat, "2d2+0");
-                resistanceStat = Dice.add(resistanceStat, "2d2+0");
-            } else {
-                newCounters.push(c-1);
-            }
-        }
-        if (offBalanceCounters.length > 0 && newCounters.length == 0)
-            world.addMessage('$fullName recovers ${getPosessivePronoun()} balance');
-
-        offBalanceCounters = newCounters;
     }
 
     public function getPronoun():String {
@@ -235,8 +207,10 @@ class Creature {
     public function takeDamage(amount:Int, attacker:Creature):Void {
         hp -= amount;
 
-        if (hp < 1)
+        if (hp < 1) {
+            isAlive = false;
             attacker.gainDice(3);
+        }
     }
 
     public function attack(other:Creature):Void {
@@ -299,7 +273,6 @@ class Creature {
     }
 
     public function update():Void {
-        recoverBalance();
         recoverFromWounds();
 
             var fallDistance = 0;
@@ -319,6 +292,10 @@ class Creature {
         if (hp < 1)
             isAlive = false;
 
+        updateVision();
+    }
+
+    public function updateVision():Void {
         if (light == null)
             return;
 

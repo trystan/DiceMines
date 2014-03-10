@@ -79,7 +79,7 @@ class PlayScreen extends Screen {
             return;
 
         if (key == "f" && player.rangedWeapon != null)
-            enter(new AimScreen(this, player, function(x:Int,y:Int):Void {
+            enter(new AimScreen(this, player, 40, function(x:Int,y:Int):Void {
                 player.rangedAttack(x, y);
                 updateAfterAnimating = true;
             }));
@@ -100,7 +100,7 @@ class PlayScreen extends Screen {
     private function animate():Void {
         var inAir = new Array<Creature>();
         for (c in creatures) {
-            if (c.knockbackPath != null && c.knockbackPath.length > 0)
+            if (c.animatePath != null && c.animatePath.length > 0)
                 inAir.push(c);
         }
         if (projectiles.length == 0 && inAir.length == 0) {
@@ -114,12 +114,22 @@ class PlayScreen extends Screen {
         isAnimating = true;
 
         for (c in inAir) {
-            var p = c.knockbackPath.shift();
+            var p = c.animatePath.shift();
             if (blocksMovement(p.x, p.y, c.z)) {
-                c.knockbackPath = null;
+                c.animatePath = null;
             } else {
-                c.x = p.x;
-                c.y = p.y;
+                var other = getCreature(p.x, p.y, c.z);
+                if (other != null) {
+                    other.takeDamage(c.animatePath.length + 1, c);
+                    if (other.isAlive) {
+                        c.attack(other);
+                        c.animatePath = null;
+                    }
+                } else {
+                    c.x = p.x;
+                    c.y = p.y;
+                    c.updateVision();
+                }
             }
         }
 
@@ -313,23 +323,52 @@ class PlayScreen extends Screen {
         items = new Map<String, Item>();
 
         player = new Creature("@", "player", 20, 20, 0);
-        player.actions.push({ name:"[K]nockback", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} prepares a knockback attack');
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                var dx = target.x - self.x + Math.random() - 0.5;
-                var dy = target.y - self.y + Math.random() - 0.5;
+        addActions(player, 3);
 
-                dx *= 10;
-                dy *= 10;
+        addCreature(player);
+        player.light = new Shadowcaster();
+        do {
+            player.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
+            player.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+        } while(tiles.get(player.x, player.y, player.z) != tile_floor);
+        player.update();
 
-                target.knockbackPath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
-                while (target.knockbackPath.length > 10)
-                    target.knockbackPath.pop();
-            });
-        }});
+        addCreatures();
+        addItems();
+    }
 
-        player.actions.push({ name:"[D]isarming attack", callback: function(world:PlayScreen, self:Creature):Void {
+    private function addActions(creature:Creature, amount:Int):Void {
+        var actions = [
+        { name:"[J]ump", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                enter(new AimScreen(this, self, Dice.rollExact(number, sides, 0), function(tx:Int, ty:Int):Void {
+                    self.animatePath = Bresenham.line(self.x, self.y, tx, ty).points;
+                    self.animatePath.shift();
+                    world.addMessage('${self.fullName} jumps');
+                }));
+            }));
+        }},
+        { name:"[K]nockback", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                var amount = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} prepares a knockback attack');
+                world.update();
+                self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                    var dx = target.x - self.x + Math.random() - 0.5;
+                    var dy = target.y - self.y + Math.random() - 0.5;
+
+                    dx *= amount;
+                    dy *= amount;
+
+                    target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
+                    while (target.animatePath.length > amount)
+                        target.animatePath.pop();
+                });
+            }));
+        }},
+        { name:"[D]isarming attack", callback: function(world:PlayScreen, self:Creature):Void {
             world.addMessage('${self.fullName} prepares to disarm someone');
+            world.update();
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 if (target.meleeWeapon != null) {
                     addItem(target.meleeWeapon, target.x, target.y, target.z);
@@ -345,18 +384,10 @@ class PlayScreen extends Screen {
                     target.armor = null;
                 }
             });
-        }});
-
-        player.actions.push({ name:"[u]nbalancing attack", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} prepares an unbalancing attack');
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                target.loseBalance(3);
-                world.addMessage('${target.fullName} is unballanced');
-            });
-        }});
-
-        player.actions.push({ name:"[w]ound", callback: function(world:PlayScreen, self:Creature):Void {
+        }},
+        { name:"[w]ound", callback: function(world:PlayScreen, self:Creature):Void {
             world.addMessage('${self.fullName} prepares a wounding attack');
+            world.update();
             self.nextAttackEffects.push(function (self:Creature, target:Creature){
                 var stats = ["accuracy", "evasion", "damage", "resistance"];
                 var modifiers = ["-1d0+0", "-2d0+0", "-0d1+0", "-0d2+0", "-1d1+0"];
@@ -371,50 +402,64 @@ class PlayScreen extends Screen {
                 world.addMessage('${self.fullName} wounds ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
                 target.wounds.push(wound);
             });
-        }});
+        }},
+        { name:"[a]ccuracy boost", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                var amount = number + "d" + sides + "+0";
+                world.addMessage('${self.fullName} focuses on accuracy');
+                world.update();
+                self.accuracyStat = Dice.add(self.accuracyStat, amount);
+                self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                    self.accuracyStat = Dice.subtract(self.accuracyStat, amount);
+                });
+            }));
+        }}, 
+        { name:"[e]vasion boost", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                var amount = number + "d" + sides + "+0";
+                world.addMessage('${self.fullName} focuses on evasion');
+                world.update();
+                self.evasionStat = Dice.add(self.evasionStat, amount);
+                self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                    self.evasionStat = Dice.subtract(self.evasionStat, amount);
+                });
+            }));
+        }},
+        { name:"[d]amage boost", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                var amount = number + "d" + sides + "+0";
+                world.addMessage('${self.fullName} focuses on damage');
+                world.update();
+                self.damageStat = Dice.add(self.damageStat, amount);
+                self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                    self.damageStat = Dice.subtract(self.damageStat, amount);
+                });
+            }));
+        }},
+        { name:"[r]esistance boost", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+                var amount = number + "d" + sides + "+0";
+                world.addMessage('${self.fullName} focuses on resistance');
+                world.update();
+                self.resistanceStat = Dice.add(self.resistanceStat, amount);
+                self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                    self.resistanceStat = Dice.subtract(self.resistanceStat, amount);
+                });
+            }));
+        }}];
 
-        player.actions.push({ name:"[a]ccuracy boost", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} focuses on accuracy (2d2+2 bonus for next attack)');
-            self.accuracyStat = Dice.add(self.accuracyStat, "2d2+2");
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                self.accuracyStat = Dice.subtract(self.accuracyStat, "2d2+2");
-            });
-        }});
-
-        player.actions.push({ name:"[e]vasion boost", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} focuses on evasion (2d2+2 bonus for next attack)');
-            self.evasionStat = Dice.add(self.evasionStat, "2d2+2");
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                self.evasionStat = Dice.subtract(self.evasionStat, "2d2+2");
-            });
-        }});
-
-        player.actions.push({ name:"[d]amage boost", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} focuses on damage (2d2+2 bonus for next attack)');
-            self.damageStat = Dice.add(self.damageStat, "2d2+2");
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                self.damageStat = Dice.subtract(self.damageStat, "2d2+2");
-            });
-        }});
-
-        player.actions.push({ name:"[r]esistance boost", callback: function(world:PlayScreen, self:Creature):Void {
-            world.addMessage('${self.fullName} focuses on resistance (2d2+2 bonus for next attack)');
-            self.resistanceStat = Dice.add(self.resistanceStat, "2d2+2");
-            self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                self.resistanceStat = Dice.subtract(self.resistanceStat, "2d2+2");
-            });
-        }});
-
-        addCreature(player);
-        player.light = new Shadowcaster();
-        do {
-            player.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
-            player.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
-        } while(tiles.get(player.x, player.y, player.z) != tile_floor);
-        player.update();
-
-        addCreatures();
-        addItems();
+        while (player.actions.length < amount) {
+            var candidate = actions[Math.floor(Math.random() * actions.length)];
+            var c = candidate.name.charAt(1);
+            var bad = false;
+            for (other in player.actions) {
+                if (other.name.charAt(1) == c)
+                    bad = true;
+            }
+            if (bad)
+                continue;
+            player.actions.push(candidate);
+        }
     }
 
     private function addCreatures():Void {
