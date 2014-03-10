@@ -24,7 +24,9 @@ class Creature {
     public var resistanceStat:String;
     public var offBalanceCounters:Array<Int>;
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
+    public var actions:Array<{ name:String, callback:PlayScreen -> Creature -> Void }>;
     public var knockbackPath:Array<IntPoint>;
+    public var nextAttackEffects:Array<Creature -> Creature -> Void>;
 
     public var light:Shadowcaster;
     public var dice:Array<Int>;
@@ -42,8 +44,10 @@ class Creature {
         this.y = y;
         this.z = z;
 
+        nextAttackEffects = new Array<Creature -> Creature -> Void>();
         dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         offBalanceCounters = new Array<Int>();
+        actions = new Array<{ name:String, callback:PlayScreen -> Creature -> Void }>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
         accuracyStat = "3d3+3";
@@ -172,6 +176,7 @@ class Creature {
 
         if (accuracy < evasion) {
             world.addMessage('$fullName evades ${projectile.owner.fullName} by ${evasion - accuracy}');
+            projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
 
@@ -194,20 +199,11 @@ class Creature {
             world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage');
 
         takeDamage(actualDamage, projectile.owner);
-    }
 
-    public function knockback(attacker:Creature, amount:Int):Void {
-        amount = Math.floor(Math.abs(amount));
-
-        var dx = x - attacker.x + Math.random() - 0.5;
-        var dy = y - attacker.y + Math.random() - 0.5;
-
-        dx *= amount;
-        dy *= amount;
-
-        knockbackPath = Bresenham.line(x, y, x + Math.floor(dx), y + Math.floor(dy)).points;
-        while (knockbackPath.length > amount)
-            knockbackPath.pop();
+        for (func in projectile.owner.nextAttackEffects)
+            func(projectile.owner, this);
+        
+        projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
     }
 
     public function takeCriticalHit():Void {
@@ -266,6 +262,7 @@ class Creature {
 
         if (accuracy < evasion) {
             world.addMessage('${other.fullName} evades $fullName by ${evasion - accuracy}');
+            nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
 
@@ -290,10 +287,12 @@ class Creature {
         else
             world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage');
 
-        if (damage > resistance * 2)
-            other.knockback(this, resistance - damage);
-
         other.takeDamage(actualDamage, this);
+
+        for (func in nextAttackEffects)
+            func(this, other);
+        
+        nextAttackEffects = new Array<Creature -> Creature -> Void>();
     }
 
     public function gainDice(amount:Int):Void {

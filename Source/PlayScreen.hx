@@ -85,6 +85,14 @@ class PlayScreen extends Screen {
             }));
         else if (key == "g")
             player.pickupItem();
+        else {
+            for (action in player.actions) {
+                if (action.name.charAt(1) == key) {
+                    action.callback(this, player);
+                    break;
+                }
+            }
+        }
 
         rl.trigger("redraw");
     }
@@ -183,6 +191,9 @@ class PlayScreen extends Screen {
 
         if (player.rangedWeapon != null)
             display.write('[f]ire ${player.rangedWeapon.name}', x, y++, fg, bg);
+
+        for (action in player.actions)
+            display.write(action.name, x, y++, fg, bg);
 
         var y = display.heightInCharacters - messages.length;
         for (message in messages)
@@ -302,6 +313,20 @@ class PlayScreen extends Screen {
         items = new Map<String, Item>();
 
         player = new Creature("@", "player", 20, 20, 0);
+        player.actions.push({ name:"[K]nockback", callback: function(world:PlayScreen, self:Creature):Void {
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                var dx = target.x - self.x + Math.random() - 0.5;
+                var dy = target.y - self.y + Math.random() - 0.5;
+
+                dx *= 10;
+                dy *= 10;
+
+                target.knockbackPath = Bresenham.line(self.x, self.y, self.x + Math.floor(dx), self.y + Math.floor(dy)).points;
+                while (target.knockbackPath.length > 10)
+                    target.knockbackPath.pop();
+            });
+        }});
+
         addCreature(player);
         player.light = new Shadowcaster();
         do {
