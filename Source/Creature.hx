@@ -148,6 +148,7 @@ class Creature {
             else
                 ty += Math.floor(Math.random() * 3) - 1;
         }
+
         var p = new Projectile(x, y, z, tx, ty, this);
         
         p.accuracyStat = accuracyStat;
@@ -170,16 +171,9 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            if (evasion > accuracy * 2)
-                world.addMessage('$fullName critically evades ${projectile.owner.fullName} by ${evasion - accuracy}');
-            else
-                world.addMessage('$fullName evades ${projectile.owner.fullName} by ${evasion - accuracy}');
+            world.addMessage('$fullName evades ${projectile.owner.fullName} by ${evasion - accuracy}');
             return;
         }
-
-        var isCriticalHit = accuracy > evasion * 2;
-        if (isCriticalHit) takeCriticalHit();
-        var hitType = isCriticalHit ? "criticaly hits" : "hits";
 
         var damage = Dice.roll(projectile.damageStat);
 
@@ -193,23 +187,11 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            if (resistance > damage * 2)
-                world.addMessage('$fullName critically resisted ${projectile.owner.fullName} by ${resistance - damage}');
-            else
-                world.addMessage('$fullName resisted ${projectile.owner.fullName} by ${resistance - damage}');
+            world.addMessage('$fullName resists ${projectile.owner.fullName} by ${resistance - damage}');
         else if (actualDamage >= hp)
-            if (damage > resistance * 2)
-                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage critical damage and kills');
-            else
-                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage damage and kills');
+            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage and kills');
         else
-            if (damage > resistance * 2)
-                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage critical damage');
-            else
-                world.addMessage('${projectile.owner.fullName} $hitType $fullName for $actualDamage damage');
-
-        if (damage > resistance * 2)
-            knockback(projectile.owner, resistance - damage);
+            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage');
 
         takeDamage(actualDamage, projectile.owner);
     }
@@ -283,17 +265,9 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            if (evasion > accuracy * 2) {
-                loseBalance(evasion - accuracy);
-                world.addMessage('${other.fullName} critically evades $fullName by ${evasion - accuracy}, leaving ${getPronoun()} off balance');
-            } else
-                world.addMessage('${other.fullName} evades $fullName by ${evasion - accuracy}');
+            world.addMessage('${other.fullName} evades $fullName by ${evasion - accuracy}');
             return;
         }
-
-        var isCriticalHit = accuracy > evasion * 2;
-        if (isCriticalHit) takeCriticalHit();
-        var hitType = isCriticalHit ? "criticaly hits" : "hits";
 
         var effectiveDamageStat = damageStat;
         if (meleeWeapon != null) effectiveDamageStat = Dice.add(effectiveDamageStat, meleeWeapon.damageStat);
@@ -310,21 +284,11 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            if (resistance > damage * 2) {
-                world.addMessage('${other.fullName} critically resisted $fullName by ${resistance - damage}, hurting $fullName by that much');
-                takeDamage(resistance - damage, other);
-            } else
-                world.addMessage('${other.fullName} resisted $fullName by ${resistance - damage}');
+            world.addMessage('${other.fullName} resists $fullName by ${resistance - damage}');
         else if (actualDamage >= other.hp)
-            if (damage > resistance * 2)
-                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage critical damage and kills ${getPronoun()}');
-            else
-                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage damage and kills ${getPronoun()}');
+            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage and kills ${getPronoun()}');
         else
-            if (damage > resistance * 2)
-                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage critical damage');
-            else
-                world.addMessage('$fullName $hitType ${other.fullName} for $actualDamage damage');
+            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage');
 
         if (damage > resistance * 2)
             other.knockback(this, resistance - damage);

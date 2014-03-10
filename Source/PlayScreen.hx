@@ -302,7 +302,6 @@ class PlayScreen extends Screen {
         items = new Map<String, Item>();
 
         player = new Creature("@", "player", 20, 20, 0);
-        player.damageStat = "5d5+5";
         addCreature(player);
         player.light = new Shadowcaster();
         do {
