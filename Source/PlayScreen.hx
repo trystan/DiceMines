@@ -39,6 +39,7 @@ class PlayScreen extends Screen {
         on("up", move, { x:0, y:-1, z:0 });
         on("down", move, { x:0, y:1, z:0 });
         on(".", move, { x:0,  y:0,  z:0  });
+        on("@", enter, new CharacterInfoScreen(this, player));
         on("keypress", doAction);
         on("tick", animate);
         on("draw", draw);
@@ -193,6 +194,7 @@ class PlayScreen extends Screen {
 
         x = 1;
         y = 1;
+        display.write('[@] view ${player.name}', x, y++, fg, bg);
         var item = getItem(player.x, player.y, player.z);
         if (item == null)
             y++;

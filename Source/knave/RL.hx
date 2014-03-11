@@ -67,6 +67,7 @@ class RL {
         screen.rl = this;
         screenStack.push(screen);
         currentScreen = screen;
+        trigger("redraw");
     }
 
     public function exit():Void {
@@ -75,10 +76,14 @@ class RL {
 
         screenStack.pop();
         currentScreen = screenStack[screenStack.length - 1];
+        trigger("redraw");
     }
 
     public function switchTo(screen:Screen):Void {
-        exit();
-        enter(screen);
+        screen.rl = this;
+        screenStack.pop();
+        screenStack.push(screen);
+        currentScreen = screen;
+        trigger("redraw");
     }
 }
