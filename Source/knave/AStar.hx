@@ -15,7 +15,7 @@ class AStar {
         this.start = start;
     }
 
-    public function pathTo(end:IntPoint):Array<IntPoint> { 
+    public function findPathTo(end:IntPoint, giveUpAfter:Int):Array<IntPoint> { 
         if(!canEnter(end.x, end.y) || start.x == end.x && start.y == end.y)
             return [];
 
@@ -27,7 +27,7 @@ class AStar {
         open = [startNode];
         closed = [];
 
-        while(open.length > 0) {
+        while(open.length > 0 && giveUpAfter-- > 0) {
             var current = open[0];
 
             closed.push(current);
@@ -72,6 +72,9 @@ class AStar {
             open.sort(sortOnFCost);
         }
 
+        if (giveUpAfter == 0)
+            return null;
+
         return walkBackToStart(end);
     }
 
@@ -115,8 +118,8 @@ class AStar {
             return 0;
     }
 
-    public static function findPath(canEnter:Int -> Int -> Bool, sx:Int, sy:Int, ex:Int, ey:Int):Array<IntPoint> {
-        return new AStar(canEnter, new IntPoint(sx, sy)).pathTo(new IntPoint(ex, ey));
+    public static function pathTo(sx:Int, sy:Int, ex:Int, ey:Int, canEnter:Int -> Int -> Bool, giveUpAfter:Int = 10000):Array<IntPoint> {
+        return new AStar(canEnter, new IntPoint(sx, sy)).findPathTo(new IntPoint(ex, ey), giveUpAfter);
     }
 }
 

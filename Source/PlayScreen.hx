@@ -18,7 +18,7 @@ class PlayScreen extends Screen {
     private var tile_stairs_down:Int = 62;
     private var tile_stairs_up:Int = 60;
 
-    private var player:Creature;
+    public var player:Creature;
     private var creatures:Array<Creature>;
     private var items:Map<String, Item>;
     private var messages:Array<String>;
@@ -30,7 +30,7 @@ class PlayScreen extends Screen {
         super();
         messages = new Array<String>();
         projectiles = new Array<Projectile>();
-        worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 20);
+        worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 10);
 
         on("<", move, { x:0,  y:0,  z:-1 });
         on(">", move, { x:0,  y:0,  z:1  });
@@ -488,15 +488,24 @@ class PlayScreen extends Screen {
 
     private function addCreatures():Void {
         for (z in 0 ... tiles.depth) {
-            for (i in 0 ... 15 + z) {
-                var creature = Factory.enemy(z);
-                addCreature(creature);
+            for (i in 0 ... 8) {
+                var x = 0;
+                var y = 0;
                 do {
-                    creature.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
-                    creature.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
-                    creature.z = z;
-                } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
-                creature.update();
+                    x = Math.floor(Math.random() * (tiles.width - 20) + 10);
+                    y = Math.floor(Math.random() * (tiles.height - 20) + 10);
+                } while(tiles.get(x, y, z) != tile_floor);
+                var enemyList = Factory.enemies(z);
+                for (creature in enemyList) {
+                    addCreature(creature);
+                    var r = enemyList.length + 1;
+                    do {
+                        creature.x = x + Math.floor(Math.random() * (r+1)) - r;
+                        creature.y = y + Math.floor(Math.random() * (r+1)) - r;
+                        creature.z = z;
+                    } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
+                    creature.update();
+                }
             }
         }
     }

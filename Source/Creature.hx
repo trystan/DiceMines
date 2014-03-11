@@ -12,6 +12,7 @@ class Creature {
     public var glyph:String;
     public var name:String;
     public var fullName:String;
+    public var ai:NpcAi;
 
     public var gender:String;
     public var hp:Int = 20;
@@ -46,8 +47,11 @@ class Creature {
         this.y = y;
         this.z = z;
 
+        if (glyph != "@")
+            new NpcAi(this);
+
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
-        dice = [5, 4, 3, 2, 1, 0, 0, 0, 0];
+        dice = [3, 4, 5, 4, 3, 2, 1, 0, 0];
         actions = new Array<{ name:String, callback:PlayScreen -> Creature -> Void }>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
@@ -80,7 +84,29 @@ class Creature {
         world.addMessage('$name is revealed');
     }
 
+    public function canSee(other:Creature):Bool {
+        if (other.z != z)
+            return false;
+
+        if (light == null) {
+            var dist = 0;
+            for (p in Bresenham.line(x, y, other.x, other.y).points) { 
+                if (dist++ > 15)
+                    return false;
+                if (world.blocksVision(p.x, p.y, z))
+                    return false;
+            }
+            return true;
+        } else {
+            return light.isLit(other.x, other.y);
+        }
+    }
+
     public function doAi():Void {
+        ai.update();
+    }
+
+    public function wander():Void {
         var mx = Math.floor(Math.random() * 3) - 1;
         var my = Math.floor(Math.random() * 3) - 1;
 

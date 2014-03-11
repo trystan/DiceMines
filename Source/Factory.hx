@@ -14,55 +14,43 @@ class Factory {
         c.name = "big " + c.name;
         c.fullName = "the " + c.name;
 
-        c.maxHp += 10;
-        c.hp += 10;
-        c.accuracyStat = Dice.add(c.accuracyStat, "1d2+1");
-        c.evasionStat = Dice.add(c.evasionStat, "1d2+1");
+        c.maxHp += 15;
+        c.hp += 15;
+        c.accuracyStat = Dice.add(c.accuracyStat, "1d1+2");
+        c.evasionStat = Dice.add(c.evasionStat, "1d1+2");
         c.damageStat = Dice.add(c.damageStat, "1d1+2");
-        c.resistanceStat = Dice.add(c.resistanceStat, "1d2+1");
+        c.resistanceStat = Dice.add(c.resistanceStat, "1d1+2");
 
         return c;
     }
 
     public static function spider(z:Int):Creature {
         var c = new Creature("s", "spider", 0, 0, 0);
-        c.accuracyStat = "5d5+" + Math.floor(5 + z / 3);
+        c.accuracyStat = "5d5+" + Math.floor(5 + z / 4);
         return maybeBig(c, z);
     }
 
     public static function bear(z:Int):Creature {
         var c = new Creature("b", "bear", 0, 0, 0);
-        c.damageStat = "5d5+" + Math.floor(5 + z / 3);
+        c.damageStat = "5d5+" + Math.floor(5 + z / 4);
         return maybeBig(c, z);
     }
 
     public static function ghost(z:Int):Creature {
         var c = new Creature("g", "ghost", 0, 0, 0);
-        c.evasionStat = "5d5+" + Math.floor(5 + z / 3);
+        c.evasionStat = "5d5+" + Math.floor(5 + z / 4);
         return maybeBig(c, z);
     }
 
     public static function elemental(z:Int):Creature {
         var c = new Creature("e", "earth elemental", 0, 0, 0, "n");
-        c.resistanceStat = "5d5+" + Math.floor(5 + z / 3);
+        c.resistanceStat = "5d5+" + Math.floor(5 + z / 4);
         return maybeBig(c, z);
     }
 
     public static function orc(z:Int):Creature {
         var c = new Creature("o", "orc", 0, 0, 0);
-
-        c.accuracyStat = Dice.add(c.accuracyStat, "1d1+1");
-        c.evasionStat = Dice.add(c.evasionStat, "1d1+1");
-        c.damageStat = Dice.add(c.damageStat, "1d1+1");
-        c.resistanceStat = Dice.add(c.resistanceStat, "1d1+1");
-        
-        if (Math.random() < 0.5)
-            c.meleeWeapon = meleeWeapon();
-        else
-            c.rangedWeapon = rangedWeapon();
-
-        if (Math.random() < 0.5)
-            c.armor = armor();
+        c.rangedWeapon = rangedWeapon();
         return maybeBig(c, z);
     }
 
@@ -73,6 +61,34 @@ class Factory {
             case 2: return ghost(z);
             case 3: return elemental(z);
             default: return orc(z);
+        }
+    }
+
+    public static function enemies(z:Int):Array<Creature> {
+        switch (Math.floor(Math.random() * 5)) {
+            case 0: 
+                var list = new Array<Creature>();
+                var count = Math.floor(2 + Math.random() * 5);
+                for (i in 0 ... count)
+                    list.push(spider(z));
+                return list;
+
+            case 1:
+                var list = new Array<Creature>();
+                var count = Dice.roll("2d2");
+                for (i in 0 ... count)
+                    list.push(bear(z));
+                return list;
+
+            case 2: return [ghost(z)];
+            case 3: return [elemental(z)];
+
+            default:
+                var list = new Array<Creature>();
+                var count = Math.floor(z / 2 + 1);
+                for (i in 0 ... count)
+                    list.push(orc(z));
+                return list;
         }
     }
 

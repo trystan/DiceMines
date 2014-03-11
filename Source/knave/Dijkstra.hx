@@ -19,7 +19,7 @@ class Dijkstra  {
         return path;
     }
 
-    public function pathTo(canEnter:Int -> Int -> Bool, start:IntPoint, check:Int -> Int -> Bool):Array<IntPoint> {
+    public function findPathTo(canEnter:Int -> Int -> Bool, start:IntPoint, check:Int -> Int -> Bool):Array<IntPoint> {
         var open:Array<IntPoint> = [start];
         visited.set(start.toString(), open[0]);
 
@@ -50,11 +50,11 @@ class Dijkstra  {
         return [];
     }
 
-    public static function findPath(canEnter:Int -> Int -> Bool, sx:Int, sy:Int, check:Int -> Int -> Bool):Array<IntPoint> {
-        return new Dijkstra().pathTo(canEnter, new IntPoint(sx, sy), check);
+    public static function pathTo(canEnter:Int -> Int -> Bool, sx:Int, sy:Int, check:Int -> Int -> Bool):Array<IntPoint> {
+        return new Dijkstra().findPathTo(canEnter, new IntPoint(sx, sy), check);
     }
 
-    public static function findNearest(canEnter:Int -> Int -> Bool, sx:Int, sy:Int, check:Int -> Int -> Bool):IntPoint {
+    public static function nearest(canEnter:Int -> Int -> Bool, sx:Int, sy:Int, check:Int -> Int -> Bool):IntPoint {
         var path = new Dijkstra().pathTo(canEnter, new IntPoint(sx, sy), check);
         if (path.length > 0)
             return path[path.length - 1];
