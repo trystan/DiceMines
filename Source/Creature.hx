@@ -22,6 +22,7 @@ class Creature {
     public var damageStat:String;
     public var evasionStat:String;
     public var resistanceStat:String;
+
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
     public var actions:Array<{ name:String, callback:PlayScreen -> Creature -> Void }>;
     public var animatePath:Array<IntPoint>;
@@ -29,6 +30,8 @@ class Creature {
 
     public var light:Shadowcaster;
     public var dice:Array<Int>;
+    public var invisibleCounter:Int = 0;
+    public function isVisible():Bool { return invisibleCounter == 0; }
 
     public var rangedWeapon:Item;
     public var meleeWeapon:Item;
@@ -68,6 +71,13 @@ class Creature {
             case "f": return "her";
             default: return "it's";
         }
+    }
+
+    public function reveal():Void {
+        if (isVisible())
+            return;
+        invisibleCounter = 0;
+        world.addMessage('$name is revealed');
     }
 
     public function doAi():Void {
@@ -122,6 +132,7 @@ class Creature {
     }
 
     public function rangedAttack(tx:Int, ty:Int):Void {
+        reveal();
         var distance = Math.floor(Math.sqrt((x-tx)*(x-tx) + (y-ty)*(y-ty)));
         for (i in 0 ... distance) {
             if (Math.random() > 0.2)
@@ -147,6 +158,7 @@ class Creature {
     }
 
     public function takeRangedAttack(projectile:Projectile):Void {
+        reveal();
         var accuracy = Dice.roll(projectile.accuracyStat);
 
         var effectiveEvasionStat = evasionStat;
@@ -205,6 +217,7 @@ class Creature {
     }
 
     public function takeDamage(amount:Int, attacker:Creature):Void {
+        reveal();
         hp -= amount;
 
         if (hp < 1) {
@@ -216,6 +229,9 @@ class Creature {
     public function attack(other:Creature):Void {
         if (glyph != "@" && other.glyph != "@")
             return;
+        
+        reveal();
+        other.reveal();
 
         var effectiveAccuracyStat = accuracyStat;
         if (meleeWeapon != null) effectiveAccuracyStat = Dice.add(effectiveAccuracyStat, meleeWeapon.accuracyStat);
@@ -272,14 +288,22 @@ class Creature {
         world.addMessage('$fullName gains ${gains.join(", ")}');
     }
 
+    public function useDice(number:Int, sides:Int):Void {
+        dice[sides - 1] -= number;
+    }
+
     public function update():Void {
+        if (invisibleCounter == 1)
+            reveal();
+        else if (invisibleCounter > 0)
+            invisibleCounter--;
         recoverFromWounds();
 
-            var fallDistance = 0;
-            while (world.isEmptySpace(x, y, z)) {
-                z++;
-                fallDistance++;
-            }
+        var fallDistance = 0;
+        while (world.isEmptySpace(x, y, z)) {
+            z++;
+            fallDistance++;
+        }
 
         if (fallDistance > 0) {
             hp -= fallDistance * 2;

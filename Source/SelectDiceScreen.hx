@@ -29,7 +29,6 @@ class SelectDiceScreen extends Screen {
         on("enter", function():Void { 
             exit();
             if (player.dice[sides-1] >= number) {
-                player.dice[sides-1] -= number;
                 callbackFunction(number, sides);
             }
             rl.trigger("redraw");
