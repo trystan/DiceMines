@@ -1,5 +1,6 @@
 package;
 
+import StringTools;
 import knave.*;
 
 class CharacterInfoScreen extends Screen {
@@ -27,8 +28,8 @@ class CharacterInfoScreen extends Screen {
         display.write("hp: " + player.hp + "/" + player.maxHp, x, y++);
         y++;
         display.write("accuracy:   " + breakdown(player.accuracyStat), x, y++);
-        display.write("evasion:    " + breakdown(player.evasionStat), x, y++);
         display.write("damage:     " + breakdown(player.damageStat), x, y++);
+        display.write("evasion:    " + breakdown(player.evasionStat), x, y++);
         display.write("resistance: " + breakdown(player.resistanceStat), x, y++);
         y++;
         display.write("sword: " + (player.meleeWeapon == null ? " - no sword - " : player.meleeWeapon.describe()), x, y++);
@@ -54,6 +55,10 @@ class CharacterInfoScreen extends Screen {
         var min = number + bonus;
         var max = number * sides + bonus;
         var avg = Math.floor((min + max) / 2);
-        return '$dice  [ $min to $max, $avg average ]';
+        return StringTools.lpad(dice, " ", 5)
+            + " [" + StringTools.lpad(min + "", " ", 2)
+            + " to " + StringTools.lpad(max + "", " ", 2)
+            + ", " + StringTools.lpad(avg + "", " ", 2)
+            + " average ]";
     }
 }

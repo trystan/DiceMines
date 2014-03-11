@@ -3,8 +3,68 @@ package;
 import StringTools;
 import knave.Color;
 import knave.Bresenham;
+import knave.Shadowcaster;
 
 class Factory {
+    public static function hero():Creature {
+        var c = new Creature("@", "player", 0, 0, 0);
+        c.light = new Shadowcaster();
+
+        var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
+        var potentialAbilityNames = new Array<String>();
+        switch (Math.floor(Math.random() * 5)) {
+            case 0: // melee
+                c.maxHp += Dice.roll("2d2+2");
+                c.accuracyStat = Dice.add(c.accuracyStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
+                c.damageStat = Dice.add(c.damageStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
+                c.meleeWeapon = meleeWeapon();
+                if (Math.random() < 0.5)
+                    c.armor = armor();
+                potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "disarming attack", "rapid attack"];
+            case 1: // ranged
+                c.maxHp += Dice.roll("2d2+2");
+                c.accuracyStat = Dice.add(c.accuracyStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
+                c.damageStat = Dice.add(c.damageStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
+                c.rangedWeapon = rangedWeapon();
+                if (Math.random() < 0.25)
+                    c.armor = armor();
+                potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "wounding attack"];
+            case 2: // magic
+                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain" ,"explosion"];
+                c.gainDice(10);
+            case 3: // piety
+                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain" ,"explosion"];
+                c.gainDice(5);
+            case 4: // stealth
+                c.evasionStat = Dice.add(c.evasionStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
+                potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak"];
+                c.gainDice(3);
+        }
+
+        c.maxHp += Dice.roll("2d2+2");
+        c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.resistanceStat = Dice.add(c.resistanceStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.gainDice(Dice.roll("1d4+0"));
+
+        while (c.abilities.length < 3) {
+            var candidate = ability(potentialAbilityNames[Math.floor(Math.random() * potentialAbilityNames.length)]);
+            var char = candidate.name.charAt(0);
+            var bad = false;
+            for (other in c.abilities) {
+                if (other.name.charAt(0) == char)
+                    bad = true;
+            }
+            if (bad)
+                continue;
+            c.abilities.push(candidate);
+        }
+
+        c.hp = c.maxHp;
+
+        return c;
+    }
 
     private static function maybeBig(c:Creature, z:Int):Creature {
         var chance = z * 2;
@@ -205,7 +265,7 @@ class Factory {
                 });
             }));
         }),
-        new Ability("Disarming attack", "A successfull hit makes your opponent drop their weapon or armor.", function(world:PlayScreen, self:Creature):Void {
+        new Ability("disarming attack", "A successfull hit makes your opponent drop their weapon or armor.", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
                 world.addMessage('${self.fullName} prepares to disarm someone');
                 world.update();
@@ -329,7 +389,7 @@ class Factory {
                 world.update();
             }));
         }),
-        new Ability("pain orb", "Cast a powerfull projectile with a bost to accuracy and damage.", function(world:PlayScreen, self:Creature):Void {
+        new Ability("orb of pain", "Cast a powerfull projectile with a bost to accuracy and damage.", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
                 world.enter(new AimScreen(world, self, 10, function(tx:Int, ty:Int):Void {
                     self.useDice(number, sides);

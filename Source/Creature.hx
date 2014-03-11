@@ -16,8 +16,8 @@ class Creature {
     public var ai:NpcAi;
 
     public var gender:String;
-    public var hp:Int = 20;
-    public var maxHp:Int = 20;
+    public var hp:Int = 30;
+    public var maxHp:Int = 30;
     public var isAlive:Bool = true;
 
     public var accuracyStat:String;
@@ -316,11 +316,12 @@ class Creature {
     public function gainDice(amount:Int):Void {
         var gains = new Array<String>();
         for (i in 0 ... amount) {
-            var sides = Math.floor(Math.min(Dice.roll("1d9+0"), Dice.roll("1d9+0")));
+            var sides = Dice.roll("1d9+0");
             dice[sides - 1] += 1;
             gains.push('1d$sides');
         }
-        world.addMessage('$fullName gains ${gains.join(", ")}');
+        if (world != null)
+            world.addMessage('$fullName gains ${gains.join(", ")}');
     }
 
     public function useDice(number:Int, sides:Int):Void {

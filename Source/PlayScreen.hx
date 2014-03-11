@@ -362,11 +362,8 @@ class PlayScreen extends Screen {
         creatures = new Array<Creature>();
         items = new Map<String, Item>();
 
-        player = new Creature("@", "player", 20, 20, 0);
-        addActions(player, 3);
-
+        player = Factory.hero();
         addCreature(player);
-        player.light = new Shadowcaster();
         do {
             player.x = Math.floor(Math.random() * (tiles.width - 20) + 10);
             player.y = Math.floor(Math.random() * (tiles.height - 20) + 10);
@@ -375,21 +372,6 @@ class PlayScreen extends Screen {
 
         addCreatures();
         addItems();
-    }
-
-    private function addActions(creature:Creature, amount:Int):Void {
-        while (player.abilities.length < amount) {
-            var candidate = Factory.randomAbility();
-            var c = candidate.name.charAt(1);
-            var bad = false;
-            for (other in player.abilities) {
-                if (other.name.charAt(1) == c)
-                    bad = true;
-            }
-            if (bad)
-                continue;
-            player.abilities.push(candidate);
-        }
     }
 
     private function addCreatures():Void {
