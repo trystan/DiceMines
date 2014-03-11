@@ -11,6 +11,7 @@ class Item {
     public var damageStat:String;
     public var evasionStat:String;
     public var resistanceStat:String;
+    public var pietyStat:String;
 
     public var type:String;
 
@@ -24,6 +25,7 @@ class Item {
         damageStat = "0d0+0";
         evasionStat = "0d0+0";
         resistanceStat = "0d0+0";
+        pietyStat = "0d0+0";
     }
 
     public function describe():String {
@@ -33,6 +35,7 @@ class Item {
         if (damageStat != "0d0+0") parts.push("damage " + damageStat);
         if (evasionStat != "0d0+0") parts.push("evasion " + evasionStat);
         if (resistanceStat != "0d0+0") parts.push("resistance " + resistanceStat);
+        if (pietyStat != "0d0+0") parts.push("piety " + pietyStat);
 
         if (parts.length == 0)
             return name;

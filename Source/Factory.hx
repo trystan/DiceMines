@@ -117,17 +117,9 @@ class Factory {
 
     public static function zombie(z:Int):Creature {
         var c = new Creature("z", "zombie", 0, 0, 0);
-        c.maxHp = 50;
-        c.hp = 50;
+        c.resistanceStat = "5d5+5";
         c.isUndead = true;
         return c;
-    }
-
-    public static function elemental(z:Int):Creature {
-        var c = new Creature("e", "earth elemental", 0, 0, 0, "n");
-        c.resistanceStat = "5d5+5";
-        c.abilities.push(ability("knock back"));
-        return maybeBig(c, z);
     }
 
     public static function orc(z:Int):Creature {
@@ -137,18 +129,17 @@ class Factory {
     }
 
     public static function enemy(z:Int):Creature {
-        switch (Math.floor(Math.random() * 6)) {
+        switch (Math.floor(Math.random() * 5)) {
             case 0: return spider(z);
             case 1: return bear(z);
             case 2: return ghost(z);
-            case 3: return elemental(z);
-            case 4: return zombie(z);
+            case 3: return zombie(z);
             default: return orc(z);
         }
     }
 
     public static function enemies(z:Int):Array<Creature> {
-        switch (Math.floor(Math.random() * 6)) {
+        switch (Math.floor(Math.random() * 5)) {
             case 0: 
                 var list = new Array<Creature>();
                 var count = Math.floor(2 + Math.random() * 5);
@@ -164,8 +155,7 @@ class Factory {
                 return list;
 
             case 2: return [ghost(z)];
-            case 3: return [elemental(z)];
-            case 4: return [zombie(z)];
+            case 3: return [zombie(z)];
 
             default:
                 var list = new Array<Creature>();
@@ -186,8 +176,7 @@ class Factory {
                     { name:"medium bow",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0", piety:"0d0+0" },
                     { name:"long bow",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0", piety:"0d0+0" },
                     { name:"silver bow",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0", piety:"0d0+0" },
-                    { name:"unholy bow",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" },
-                    { name:"heroic bow",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1", piety:"0d0+0" }];
+                    { name:"unholy bow",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" }];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item(")", Color.hsv(30, 80, 80), "ranged", def.name);
@@ -195,6 +184,7 @@ class Factory {
         i.evasionStat = def.evasion;
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
+        i.pietyStat = def.piety;
         return i;
     }
 
@@ -204,8 +194,7 @@ class Factory {
                     { name:"medium sword",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0", piety:"0d0+0" },
                     { name:"long sword",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0", piety:"0d0+0" },
                     { name:"silver sword",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0", piety:"0d0+0" },
-                    { name:"unholy sword",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" },
-                    { name:"heroic sword",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1", piety:"0d0+0" }];
+                    { name:"unholy sword",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" }];
         
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("|", Color.hsv(180, 20, 80), "melee", def.name);
@@ -213,6 +202,7 @@ class Factory {
         i.evasionStat = def.evasion;
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
+        i.pietyStat = def.piety;
         return i;
     }
 
@@ -222,8 +212,7 @@ class Factory {
                     { name:"medium armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"2d2+0", piety:"0d0+0" },
                     { name:"heavy armor",     accuracy:"0d0+0", evasion:"-2d2+0", damage:"0d0+0", resistance:"2d3+0", piety:"0d0+0" },
                     { name:"silver armor",    accuracy:"0d0+0", evasion:"-1d1+5", damage:"0d0+0", resistance:"1d1+5", piety:"0d0+0" },
-                    { name:"unholy bow",      accuracy:"0d0+0", evasion: "1d1+1", damage:"0d0+0", resistance:"1d1+1", piety:"-3d3+0" },
-                    { name:"heroic armor",    accuracy:"0d0+1", evasion:"-1d1+1", damage:"0d0+1", resistance:"0d0+1", piety:"0d0+0" }];
+                    { name:"unholy bow",      accuracy:"0d0+0", evasion: "1d1+1", damage:"0d0+0", resistance:"1d1+1", piety:"-3d3+0" }];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("[", Color.hsv(90, 40, 80), "armor", def.name);
@@ -231,6 +220,7 @@ class Factory {
         i.evasionStat = def.evasion;
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
+        i.pietyStat = def.piety;
         return i;
     }
 
@@ -402,7 +392,7 @@ class Factory {
                         break;
                     else {
                         var target = candidates[Math.floor(Math.random() * candidates.length)];
-                        var p = new Projectile(self.x, self.y, self.z, target.x, target.y, self, "*", Color.hsv(180, 90, 90));
+                        var p = new Projectile(self.x, self.y, self.z, target.x, target.y, self, "magic missile", "*", Color.hsv(180, 90, 90));
                         p.accuracyStat = self.accuracyStat;
                         p.damageStat = self.damageStat;
                         self.world.addProjectile(p);
@@ -416,7 +406,7 @@ class Factory {
                 world.enter(new AimScreen(world, self, 10, function(tx:Int, ty:Int):Void {
                     self.useDice(number, sides);
                     var bonus = number + "d" + sides + "+0";
-                    var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "*", Color.hsv(300, 90, 90));
+                    var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "*", "orb of pain", Color.hsv(300, 90, 90));
                     p.accuracyStat = Dice.add(self.accuracyStat, bonus);
                     p.damageStat = Dice.add(self.damageStat, bonus);
                     self.world.addProjectile(p);

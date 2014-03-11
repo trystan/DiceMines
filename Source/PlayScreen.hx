@@ -7,8 +7,8 @@ class PlayScreen extends Screen {
     private var heights:Grid3<Float>;
     private var tiles:Grid3<Int>;
     
-    private var floorHeight = 0.45;
-    private var wallHeight = 0.65;
+    private var floorHeight = 0.40;
+    private var wallHeight = 0.55;
 
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
@@ -46,6 +46,10 @@ class PlayScreen extends Screen {
         on("right", move, { x:1, y:0, z:0 });
         on("up", move, { x:0, y:-1, z:0 });
         on("down", move, { x:0, y:1, z:0 });
+        on("up left", move, { x:-1, y:-1, z:0 });
+        on("up right", move, { x:1, y:-1, z:0 });
+        on("down left", move, { x:-1, y:1, z:0 });
+        on("down right", move, { x:1, y:1, z:0 });
         on(".", move, { x:0,  y:0,  z:0  });
         on("@", enter, new CharacterInfoScreen(this, player));
         on("keypress", doAction);
@@ -287,6 +291,8 @@ class PlayScreen extends Screen {
     }
 
     public function addMessage(text:String):Void {
+        while (text.indexOf("  ") > -1)
+            text = StringTools.replace(text, "  ", " ");
         messages.push(text);
     }
 
@@ -366,6 +372,7 @@ class PlayScreen extends Screen {
         carveFloors();
 
         makeTiles();
+        addPillars();
         addBridges();
         addStairs();
 
@@ -505,6 +512,20 @@ class PlayScreen extends Screen {
             tiles.set(x, y, z, height < floorHeight ? tile_empty : (height > wallHeight ? tile_wall : tile_floor));
             if (z == heights.depth - 1 && tiles.get(x, y, z) == tile_empty)
                 tiles.set(x, y, z, tile_water);
+        }
+    }
+
+    private function addPillars():Void {
+        for (z in 0 ... heights.depth) {
+            for (i in 0 ... 12) {
+                var cx = Math.floor(Math.random() * (heights.width - 6) + 3);
+                var cy = Math.floor(Math.random() * (heights.height - 6) + 3);
+
+                tiles.set(cx, cy, z, tile_wall);
+                tiles.set(cx+1, cy, z, tile_wall);
+                tiles.set(cx+1, cy+1, z, tile_wall);
+                tiles.set(cx, cy+1, z, tile_wall);
+            }
         }
     }
 

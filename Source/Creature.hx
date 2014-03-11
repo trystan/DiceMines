@@ -181,7 +181,7 @@ class Creature {
         var glyph = ["-1,-1" => "\\", "0,-1" => "|", "1,-1" => "/",
                      "-1,0"  => "-", "0,0"  => dot, "1,0" => "-",
                      "-1,1"  => "/", "0,1"  => "|", "1,1" => "\\"];
-        var p = new Projectile(x, y, z, tx, ty, this, glyph.get(mx + "," + my), Color.hsv(0, 10, 90));
+        var p = new Projectile(x, y, z, tx, ty, this, "arrow", glyph.get(mx + "," + my), Color.hsv(0, 10, 90));
         
         p.accuracyStat = accuracyStat;
         if (rangedWeapon != null) p.accuracyStat = Dice.add(p.accuracyStat, rangedWeapon.accuracyStat);
@@ -194,6 +194,20 @@ class Creature {
         world.addProjectile(p);
     }
 
+    private function quantify(amount:Int):String {
+        amount = Math.floor(Math.abs(amount));
+        if (amount < 3)
+            return "just barely";
+        else if (amount < 6)
+            return "barely";
+        else if (amount < 9)
+            return "";
+        else if (amount < 12)
+            return "easily";
+        else
+            return "very easily";
+    }
+
     public function takeRangedAttack(projectile:Projectile):Void {
         reveal();
         var accuracy = Dice.roll(projectile.accuracyStat);
@@ -204,7 +218,7 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName evades ${projectile.owner.fullName} by ${evasion - accuracy}');
+            world.addMessage('$fullName ${quantify(evasion-accuracy)} evades ${projectile.owner.fullName}\'s ${projectile.name}'); //'
             projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
@@ -221,11 +235,11 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('$fullName resists ${projectile.owner.fullName} by ${resistance - damage}');
+            world.addMessage('$fullName ${quantify(resistance-damage)} resists ${projectile.owner.fullName}\'s ${projectile.name}'); //'
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage and kills ${getPronoun()}');
+            world.addMessage('${projectile.owner.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage, killing ${getPronoun()}');
         else
-            world.addMessage('${projectile.owner.fullName} hits $fullName for $actualDamage damage');
+            world.addMessage('${projectile.owner.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage');
 
         takeDamage(actualDamage, projectile.owner);
 
@@ -286,7 +300,7 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat);
 
         if (accuracy < evasion) {
-            world.addMessage('${other.fullName} evades $fullName by ${evasion - accuracy}');
+            world.addMessage('${other.fullName} ${quantify(evasion-accuracy)} evades $fullName');
             nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
@@ -306,11 +320,11 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('${other.fullName} resists $fullName by ${resistance - damage}');
+            world.addMessage('${other.fullName} ${quantify(resistance-damage)} resists $fullName');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage and kills ${other.getPronoun()}');
+            world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage, killing ${other.getPronoun()}');
         else
-            world.addMessage('$fullName hits ${other.fullName} for $actualDamage damage');
+            world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage');
 
         other.takeDamage(actualDamage, this);
 

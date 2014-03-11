@@ -10,6 +10,7 @@ class Projectile {
     public var z:Int;
     public var tx:Int;
     public var ty:Int;
+    public var name:String;
     public var isDone:Bool = false;
     public var glyph:String;
     public var color:Int;
@@ -20,13 +21,14 @@ class Projectile {
 
     public var path:Array<IntPoint>;
 
-    public function new(x:Int, y:Int, z:Int, tx:Int, ty:Int, owner:Creature, glyph:String, color:Color) {
+    public function new(x:Int, y:Int, z:Int, tx:Int, ty:Int, owner:Creature, name:String, glyph:String, color:Color) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.tx = tx;
         this.ty = ty;
         this.owner = owner;
+        this.name = name;
         this.glyph = glyph;
         this.color = color.toInt();
         accuracyStat = owner.accuracyStat;

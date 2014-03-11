@@ -24,6 +24,10 @@ class AimScreen extends Screen {
         on("right", move, { x:1, y:0 });
         on("up", move, { x:0, y:-1 });
         on("down", move, { x:0, y:1 });
+        on("up left", move, { x:-1, y:-1 });
+        on("up right", move, { x:1, y:-1 });
+        on("down left", move, { x:-1, y:1 });
+        on("down right", move, { x:1, y:1 });
         on(".", move, { x:0,  y:0 });
         on("escape", exit);
         on("enter", fire);
