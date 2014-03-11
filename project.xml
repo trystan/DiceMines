@@ -2,7 +2,7 @@
 <project>
 	<meta title="DiceMiner" package="com.example.diceminer" version="1.0.0" company="Trystan" />
 	<app main="Main" path="Export" file="DiceMiner" />
-    <window width="1024" height="768" />
+    <window width="1280" height="720" />
 
 	<source path="Source" />
 	
