@@ -24,6 +24,8 @@ class Creature {
     public var damageStat:String;
     public var evasionStat:String;
     public var resistanceStat:String;
+    public var pietyStat:String;
+    public var isUndead:Bool = false;
 
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
     public var abilities:Array<Ability>;
@@ -56,10 +58,11 @@ class Creature {
         abilities = new Array<Ability>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
-        accuracyStat = "3d3+3";
-        damageStat = "3d3+3";
-        evasionStat = "3d3+3";
-        resistanceStat = "3d3+3";
+        accuracyStat = "3d3+0";
+        damageStat = "3d3+0";
+        evasionStat = "3d3+0";
+        resistanceStat = "3d3+0";
+        pietyStat = "2d2+0";
     }
 
     public function getPronoun():String {
@@ -259,6 +262,10 @@ class Creature {
             if (attacker != null)
                 attacker.gainDice(3);
         }
+    }
+
+    public function heal(amount:Int):Void {
+        hp = Math.floor(Math.min(hp + amount, maxHp));
     }
 
     public function attack(other:Creature):Void {

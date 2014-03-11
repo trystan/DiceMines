@@ -31,13 +31,14 @@ class CharacterInfoScreen extends Screen {
         display.write("damage:     " + breakdown(player.damageStat), x, y++);
         display.write("evasion:    " + breakdown(player.evasionStat), x, y++);
         display.write("resistance: " + breakdown(player.resistanceStat), x, y++);
+        display.write("piety:      " + breakdown(player.pietyStat), x, y++);
         y++;
         display.write("sword: " + (player.meleeWeapon == null ? " - no sword - " : player.meleeWeapon.describe()), x, y++);
         display.write("bow:   " + (player.rangedWeapon == null ? " - no bow - " : player.rangedWeapon.describe()), x, y++);
         display.write("armor: " + (player.armor == null ? " - no armor - " : player.armor.describe()), x, y++);
         y++;
 
-        display.write("Special actions:", x-1, y++);
+        display.write("Special abilities:", x-1, y++);
         y++;
         for (ability in player.abilities) {
             display.write(ability.name, x, y++);

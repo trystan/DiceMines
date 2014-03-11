@@ -31,9 +31,13 @@ class Factory {
                 potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "wounding attack"];
             case 2: // magic
                 potentialAbilityNames = ["Jump", "magic missiles", "orb of pain" ,"explosion"];
+                c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.gainDice(10);
             case 3: // piety
-                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain" ,"explosion"];
+                potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite"];
+                c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.gainDice(5);
             case 4: // stealth
                 c.evasionStat = Dice.add(c.evasionStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
@@ -46,9 +50,13 @@ class Factory {
         c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.resistanceStat = Dice.add(c.resistanceStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.gainDice(Dice.roll("1d4+0"));
 
-        while (c.abilities.length < 3) {
+        var amount = 3;
+        if (Math.random() < 0.25)
+            amount++;
+        while (c.abilities.length < amount) {
             var candidate = ability(potentialAbilityNames[Math.floor(Math.random() * potentialAbilityNames.length)]);
             var char = candidate.name.charAt(0);
             var bad = false;
@@ -101,9 +109,18 @@ class Factory {
 
     public static function ghost(z:Int):Creature {
         var c = new Creature("g", "ghost", 0, 0, 0);
+        c.isUndead = true;
         c.evasionStat = "5d5+5";
         c.abilities.push(ability("sneak"));
         return maybeBig(c, z);
+    }
+
+    public static function zombie(z:Int):Creature {
+        var c = new Creature("z", "zombie", 0, 0, 0);
+        c.maxHp = 50;
+        c.hp = 50;
+        c.isUndead = true;
+        return c;
     }
 
     public static function elemental(z:Int):Creature {
@@ -120,17 +137,18 @@ class Factory {
     }
 
     public static function enemy(z:Int):Creature {
-        switch (Math.floor(Math.random() * 5)) {
+        switch (Math.floor(Math.random() * 6)) {
             case 0: return spider(z);
             case 1: return bear(z);
             case 2: return ghost(z);
             case 3: return elemental(z);
+            case 4: return zombie(z);
             default: return orc(z);
         }
     }
 
     public static function enemies(z:Int):Array<Creature> {
-        switch (Math.floor(Math.random() * 5)) {
+        switch (Math.floor(Math.random() * 6)) {
             case 0: 
                 var list = new Array<Creature>();
                 var count = Math.floor(2 + Math.random() * 5);
@@ -147,6 +165,7 @@ class Factory {
 
             case 2: return [ghost(z)];
             case 3: return [elemental(z)];
+            case 4: return [zombie(z)];
 
             default:
                 var list = new Array<Creature>();
@@ -162,12 +181,13 @@ class Factory {
     }
 
     public static function rangedWeapon():Item {
-        var list = [{ name:"crappy bow",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0"},
-                    { name:"short bow",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0"},
-                    { name:"medium bow",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0"},
-                    { name:"long bow",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0"},
-                    { name:"silver bow",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0"},
-                    { name:"heroic bow",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1"}];
+        var list = [{ name:"crappy bow",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"short bow",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"medium bow",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"long bow",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"silver bow",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"unholy bow",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" },
+                    { name:"heroic bow",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1", piety:"0d0+0" }];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item(")", Color.hsv(30, 80, 80), "ranged", def.name);
@@ -179,12 +199,13 @@ class Factory {
     }
 
     public static function meleeWeapon():Item {
-        var list = [{ name:"crappy sword",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0"},
-                    { name:"short sword",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0"},
-                    { name:"medium sword",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0"},
-                    { name:"long sword",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0"},
-                    { name:"silver sword",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0"},
-                    { name:"heroic sword",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1"}];
+        var list = [{ name:"crappy sword",    accuracy:"-1d2+0", evasion:"0d0+0", damage:"-1d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"short sword",     accuracy:"2d2+0", evasion:"0d0+0", damage:"1d1+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"medium sword",    accuracy:"1d2+0", evasion:"0d0+0", damage:"1d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"long sword",      accuracy:"1d1+0", evasion:"0d0+0", damage:"2d2+0", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"silver sword",    accuracy:"1d1+5", evasion:"0d0+0", damage:"1d1+5", resistance:"0d0+0", piety:"0d0+0" },
+                    { name:"unholy sword",    accuracy:"2d2+2", evasion:"0d0+0", damage:"2d2+2", resistance:"0d0+0", piety:"-3d3+0" },
+                    { name:"heroic sword",    accuracy:"1d1+1", evasion:"0d0+1", damage:"1d1+1", resistance:"0d0+1", piety:"0d0+0" }];
         
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("|", Color.hsv(180, 20, 80), "melee", def.name);
@@ -196,12 +217,13 @@ class Factory {
     }
 
     public static function armor():Item {
-        var list = [{ name:"crappy armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"-1d1+0"},
-                    { name:"light armor",     accuracy:"0d0+0", evasion:"-1d1+0", damage:"0d0+0", resistance:"1d2+0"},
-                    { name:"medium armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"2d2+0"},
-                    { name:"heavy armor",     accuracy:"0d0+0", evasion:"-2d2+0", damage:"0d0+0", resistance:"2d3+0"},
-                    { name:"silver armor",    accuracy:"0d0+0", evasion:"-1d1+5", damage:"0d0+0", resistance:"1d1+5"},
-                    { name:"heroic armor",    accuracy:"0d0+1", evasion:"-1d1+1", damage:"0d0+1", resistance:"0d0+1"}];
+        var list = [{ name:"crappy armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"-1d1+0", piety:"0d0+0" },
+                    { name:"light armor",     accuracy:"0d0+0", evasion:"-1d1+0", damage:"0d0+0", resistance:"1d2+0", piety:"0d0+0" },
+                    { name:"medium armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"2d2+0", piety:"0d0+0" },
+                    { name:"heavy armor",     accuracy:"0d0+0", evasion:"-2d2+0", damage:"0d0+0", resistance:"2d3+0", piety:"0d0+0" },
+                    { name:"silver armor",    accuracy:"0d0+0", evasion:"-1d1+5", damage:"0d0+0", resistance:"1d1+5", piety:"0d0+0" },
+                    { name:"unholy bow",      accuracy:"0d0+0", evasion: "1d1+1", damage:"0d0+0", resistance:"1d1+1", piety:"-3d3+0" },
+                    { name:"heroic armor",    accuracy:"0d0+1", evasion:"-1d1+1", damage:"0d0+1", resistance:"0d0+1", piety:"0d0+0" }];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("[", Color.hsv(90, 40, 80), "armor", def.name);
@@ -414,6 +436,107 @@ class Factory {
                     }
                 }));
             }));
-        })];
+        }),
+        new Ability("turn undead", "Damage all visible ghosts and zombies", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        for (c in world.creatures) {
+                            if (c.isUndead && self.canSee(c))
+                                c.takeDamage(Dice.roll(self.pietyStat), self);
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("healing aura", "Allies are heald by their piety", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        for (c in world.creatures) {
+                            if (c.glyph == self.glyph)
+                                c.heal(Dice.roll(c.pietyStat));
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("pious attack", "Buff allies accuracy and damage by their piety", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                for (c in world.creatures) {
+                    if (c.glyph == self.glyph) {
+                        c.accuracyStat = Dice.add(c.accuracyStat, c.pietyStat);
+                        c.damageStat = Dice.add(c.damageStat, c.pietyStat);
+                    }
+                }
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        if (turn > 0)
+                            return;
+                        for (c in world.creatures) {
+                            if (c.glyph == self.glyph) {
+                                c.accuracyStat = Dice.subtract(c.accuracyStat, c.pietyStat);
+                                c.damageStat = Dice.subtract(c.damageStat, c.pietyStat);
+                            }
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("pious defence", "Buff allies evasion and resistance by their piety", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                for (c in world.creatures) {
+                    if (c.glyph == self.glyph) {
+                        c.evasionStat = Dice.add(c.evasionStat, c.pietyStat);
+                        c.resistanceStat = Dice.add(c.resistanceStat, c.pietyStat);
+                    }
+                }
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        if (turn > 0)
+                            return;
+                        for (c in world.creatures) {
+                            if (c.glyph == self.glyph) {
+                                c.evasionStat = Dice.subtract(c.evasionStat, c.pietyStat);
+                                c.resistanceStat = Dice.subtract(c.resistanceStat, c.pietyStat);
+                            }
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("smite", "Damage another based on the difference in piety", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
+                var radius = Dice.rollExact(number, sides, 0);
+                world.enter(new AimScreen(world, self, radius, function(tx:Int, ty:Int):Void {
+                    self.useDice(number, sides);
+                    var other = world.getCreature(tx, ty, self.z);
+                    if (other == null) {
+                        world.addMessage('${self.fullName} smites nothing in particular');
+                    } else {
+                        var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
+                        if (diff > 0) {
+                            diff *= 2;
+                            world.addMessage('${self.fullName} smites ${other.fullName} for ${diff} damage');
+                            other.takeDamage(diff, self);
+                        } else
+                            world.addMessage('${self.fullName} fails to smite ${other.fullName} by ${diff}');
+                    }
+                }));
+            }));
+        }),
+        ];
     }
 }

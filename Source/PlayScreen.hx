@@ -27,6 +27,7 @@ class PlayScreen extends Screen {
     private var projectiles:Array<Projectile>;
     private var isAnimating:Bool = false;
     private var updateAfterAnimating:Bool = false;
+    public var effects:Array<{ countdown:Int, func:Int -> Void }>;
 
     public function new() {
         super();
@@ -35,6 +36,7 @@ class PlayScreen extends Screen {
         projectiles = new Array<Projectile>();
         fireList = new Array<String>();
         fireMap = new Map<String, Bool>();
+        effects = new Array<{ countdown:Int, func:Int -> Void }>();
 
         worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 10);
 
@@ -60,6 +62,14 @@ class PlayScreen extends Screen {
     }
 
     public function update():Void {
+        var newEffects = new Array<{ countdown:Int, func:Int -> Void }>();
+        for (e in effects) {
+            if (--e.countdown > 0)
+                newEffects.push(e);
+            e.func(e.countdown);
+        }
+        effects = newEffects;
+
         var newFireList = new Array<String>();
         for (p in fireList) {
             if (Math.random() < 0.75)
