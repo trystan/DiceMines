@@ -340,7 +340,7 @@ class PlayScreen extends Screen {
     private function addActions(creature:Creature, amount:Int):Void {
         var actions = [
         { name:"[J]ump", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll for jump distance?", function(number:Int, sides:Int):Void {
                 enter(new AimScreen(this, self, Dice.rollExact(number, sides, 0), function(tx:Int, ty:Int):Void {
                     self.useDice(number, sides);
                     self.animatePath = Bresenham.line(self.x, self.y, tx, ty).points;
@@ -350,7 +350,7 @@ class PlayScreen extends Screen {
             }));
         }},
         { name:"[K]nockback", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll for knockback distance?", function(number:Int, sides:Int):Void {
                 var amount = Dice.rollExact(number, sides, 0);
                 self.useDice(number, sides);
                 world.addMessage('${self.fullName} prepares a knockback attack');
@@ -369,7 +369,7 @@ class PlayScreen extends Screen {
             }));
         }},
         { name:"[D]isarming attack", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
                 world.addMessage('${self.fullName} prepares to disarm someone');
                 world.update();
                 var amount = number + "d" + sides;
@@ -396,7 +396,7 @@ class PlayScreen extends Screen {
             }));
         }},
         { name:"[w]ounding attack", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
                 world.addMessage('${self.fullName} prepares a wounding attack');
                 world.update();
                 self.useDice(number, sides);
@@ -417,7 +417,7 @@ class PlayScreen extends Screen {
             }));
         }},
         { name:"[r]apid attack", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 world.addMessage('${self.fullName} prepares for a rapid attack');
                 world.update();
@@ -438,7 +438,7 @@ class PlayScreen extends Screen {
             }));
         }}, 
         { name:"[s]neak", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
                 self.invisibleCounter = Dice.rollExact(number, sides, 0);
                 self.useDice(number, sides);
                 world.addMessage('${self.fullName} sneaks away');
@@ -446,7 +446,7 @@ class PlayScreen extends Screen {
             }));
         }}, 
         { name:"[a]ccuracy boost", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
                 var amount = number + "d" + sides + "+0";
                 self.useDice(number, sides);
                 world.addMessage('${self.fullName} focuses on accuracy');
@@ -458,7 +458,7 @@ class PlayScreen extends Screen {
             }));
         }}, 
         { name:"[d]amage boost", callback: function(world:PlayScreen, self:Creature):Void {
-            enter(new SelectDiceScreen(this, self, function(number:Int, sides:Int):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
                 var amount = number + "d" + sides + "+0";
                 self.useDice(number, sides);
                 world.addMessage('${self.fullName} focuses on damage');

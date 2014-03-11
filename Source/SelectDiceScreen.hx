@@ -5,15 +5,17 @@ import knave.*;
 class SelectDiceScreen extends Screen {
     private var world:PlayScreen;
     private var player:Creature;
+    private var prompt:String;
     private var callbackFunction:Int -> Int -> Void;
     private var number:Int = 1;
     private var sides:Int = 1;
     private var section:Int = 0;
 
-    public function new(world:PlayScreen, player:Creature, callbackFunction: Int -> Int -> Void) {
+    public function new(world:PlayScreen, player:Creature, prompt:String, callbackFunction: Int -> Int -> Void) {
         super();
         this.world = world;
         this.player = player;
+        this.prompt = prompt;
         this.callbackFunction = callbackFunction;
 
         on("1", accept, 1);
@@ -51,6 +53,7 @@ class SelectDiceScreen extends Screen {
         world.draw(display);
 
         var fg = new Color(200, 200, 200).toInt();
+        var hilight = new Color(250, 250, 150).toInt();
         var bg = new Color(4, 4, 8).toInt();
 
         var dice = new Array<String>();
@@ -61,19 +64,19 @@ class SelectDiceScreen extends Screen {
         }
         var description = dice.join(" ");
 
+        var x = Math.floor(display.widthInCharacters / 2 - 30);
         var y = 12;
-        display.writeCenter("                                     ", y++, fg, bg);
-        display.writeCenter("  You have:                          ", y++, fg, bg);
-        display.writeCenter("                                     ", y++, fg, bg);
-        display.writeCenter("                                     ", y, fg, bg);
-        display.writeCenter( description, y++, fg, bg);
-        display.writeCenter("                                     ", y++, fg, bg);
-        display.writeCenter("  How many dice do you want to use?  ", y++, fg, bg);
-        display.writeCenter("                                     ", y++, fg, bg);
-        display.writeCenter('  ${number}d$sides                                ', y++, fg, bg);
-        display.writeCenter("                                     ", y++, fg, bg);
-        display.writeCenter("     [1-9] or [escape] or [enter]    ", y++, fg, bg);
-        display.writeCenter("                                     ", y++, fg, bg);
+        display.write("                                                           ", x, y++, fg, bg);
+        display.write("                                                           ", x, y, fg, bg);
+        display.write("  You have: " + description, x, y++, fg, bg);
+        display.write("                                                           ", x, y++, fg, bg);
+        display.write("                                                           ", x, y, fg, bg);
+        display.write("  " + prompt + " ", x, y, fg, bg);
+        display.write(number + "d" + sides, null, null, hilight, bg);
+        y++;
+        display.write("                                                           ", x, y++, fg, bg);
+        display.write("  [1-9] or [escape] or [enter]                             ", x, y++, fg, bg);
+        display.write("                                                           ", x, y++, fg, bg);
         display.update();
     }
 }
