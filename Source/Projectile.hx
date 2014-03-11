@@ -1,5 +1,6 @@
 package;
 
+import knave.Color;
 import knave.IntPoint;
 import knave.Bresenham;
 
@@ -10,6 +11,8 @@ class Projectile {
     public var tx:Int;
     public var ty:Int;
     public var isDone:Bool = false;
+    public var glyph:String;
+    public var color:Int;
 
     public var accuracyStat:String;
     public var damageStat:String;
@@ -17,13 +20,15 @@ class Projectile {
 
     public var path:Array<IntPoint>;
 
-    public function new(x:Int, y:Int, z:Int, tx:Int, ty:Int, owner:Creature) {
+    public function new(x:Int, y:Int, z:Int, tx:Int, ty:Int, owner:Creature, glyph:String, color:Color) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.tx = tx;
         this.ty = ty;
         this.owner = owner;
+        this.glyph = glyph;
+        this.color = color.toInt();
         accuracyStat = owner.accuracyStat;
         damageStat = owner.damageStat;
         path = Bresenham.line(x, y, tx, ty).points;

@@ -179,7 +179,7 @@ class PlayScreen extends Screen {
                 continue;
 
             var g = getGraphic(p.x, p.y, p.z);
-            display.write("*", p.x, p.y, new Color(200, 0, 0).toInt(), g.bg.toInt());
+            display.write(p.glyph, p.x, p.y, p.color, g.bg.toInt());
         }
 
         var x = display.widthInCharacters - 16;
@@ -470,7 +470,33 @@ class PlayScreen extends Screen {
                     self.damageStat = Dice.subtract(self.damageStat, amount);
                 });
             }));
-        }}];
+        }},
+        { name:"[m]agic missiles", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
+                self.useDice(number, sides);
+                var count = Dice.rollExact(number, sides, 0);
+                for (i in 0 ... count) {
+                    var candidates = new Array<Creature>();
+                    for (c in creatures) {
+                        if (self.canSee(c))
+                            candidates.push(c);
+                    }
+                    if (candidates.length == 0)
+                        break;
+                    else {
+                        var target = candidates[Math.floor(Math.random() * candidates.length)];
+                        var p = new Projectile(self.x, self.y, self.z, target.x, target.y, self, "*", Color.hsv(180, 90, 90));
+                        p.accuracyStat = self.accuracyStat;
+                        p.damageStat = self.damageStat;
+                        self.world.addProjectile(p);
+                    }
+                }
+                world.update();
+            }));
+        }}
+        ];
+
+        player.actions.push(actions[actions.length-1]);
 
         while (player.actions.length < amount) {
             var candidate = actions[Math.floor(Math.random() * actions.length)];

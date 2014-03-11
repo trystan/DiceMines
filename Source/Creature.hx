@@ -1,5 +1,6 @@
 package;
 
+import knave.Color;
 import knave.IntPoint;
 import knave.Bresenham;
 import knave.Shadowcaster;
@@ -170,7 +171,14 @@ class Creature {
                 ty += Math.floor(Math.random() * 3) - 1;
         }
 
-        var p = new Projectile(x, y, z, tx, ty, this);
+        var m = Math.abs(tx-x) + Math.abs(ty-y);
+        var mx = Math.max(-1, Math.min(Math.round((tx-x) / m * 2), 1));
+        var my = Math.max(-1, Math.min(Math.round((ty-y) / m * 2), 1));
+        var dot = String.fromCharCode(249);
+        var glyph = ["-1,-1" => "\\", "0,-1" => "|", "1,-1" => "/",
+                     "-1,0"  => "-", "0,0"  => dot, "1,0" => "-",
+                     "-1,1"  => "/", "0,1"  => "|", "1,1" => "\\"];
+        var p = new Projectile(x, y, z, tx, ty, this, glyph.get(mx + "," + my), Color.hsv(0, 10, 90));
         
         p.accuracyStat = accuracyStat;
         if (rangedWeapon != null) p.accuracyStat = Dice.add(p.accuracyStat, rangedWeapon.accuracyStat);
