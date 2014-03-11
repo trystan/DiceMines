@@ -26,7 +26,7 @@ class Creature {
     public var resistanceStat:String;
 
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
-    public var actions:Array<{ name:String, callback:PlayScreen -> Creature -> Void }>;
+    public var abilities:Array<Ability>;
     public var animatePath:Array<IntPoint>;
     public var nextAttackEffects:Array<Creature -> Creature -> Void>;
 
@@ -53,7 +53,7 @@ class Creature {
 
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
         dice = [3, 4, 5, 4, 3, 2, 1, 0, 0];
-        actions = new Array<{ name:String, callback:PlayScreen -> Creature -> Void }>();
+        abilities = new Array<Ability>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
         accuracyStat = "3d3+3";
@@ -162,7 +162,7 @@ class Creature {
         reveal();
         var distance = Math.floor(Math.sqrt((x-tx)*(x-tx) + (y-ty)*(y-ty)));
         for (i in 0 ... distance) {
-            if (Math.random() > 0.2)
+            if (Math.random() > 0.25)
                 continue;
 
             if (Math.random() < 0.5)

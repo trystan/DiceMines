@@ -38,8 +38,9 @@ class CharacterInfoScreen extends Screen {
 
         display.write("Special actions:", x-1, y++);
         y++;
-        for (action in player.actions) {
-            display.write(action.name, x, y++);
+        for (ability in player.abilities) {
+            display.write(ability.name, x, y++);
+            display.write(ability.description, x + 2, y++);
             y++;
         }
 
