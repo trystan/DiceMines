@@ -256,7 +256,8 @@ class Creature {
 
         if (hp < 1) {
             isAlive = false;
-            attacker.gainDice(3);
+            if (attacker != null)
+                attacker.gainDice(3);
         }
     }
 

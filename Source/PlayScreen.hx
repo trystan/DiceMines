@@ -19,6 +19,8 @@ class PlayScreen extends Screen {
     private var tile_stairs_up:Int = 60;
 
     public var player:Creature;
+    private var fireList:Array<String>;
+    private var fireMap:Map<String, Bool>;
     private var creatures:Array<Creature>;
     private var items:Map<String, Item>;
     private var messages:Array<String>;
@@ -31,6 +33,9 @@ class PlayScreen extends Screen {
         messages = new Array<String>();
         projectiles = new Array<Projectile>();
         worldgen(Math.floor(1024 / 12), Math.floor(720/ 12), 10);
+
+        fireList = new Array<String>();
+        fireMap = new Map<String, Bool>();
 
         on("<", move, { x:0,  y:0,  z:-1 });
         on(">", move, { x:0,  y:0,  z:1  });
@@ -54,6 +59,15 @@ class PlayScreen extends Screen {
     }
 
     private function update():Void {
+        var newFireList = new Array<String>();
+        for (p in fireList) {
+            if (Math.random() < 0.75)
+                newFireList.push(p);
+            else
+                fireMap.remove(p);
+        }
+        fireList = newFireList;
+
         for (c in creatures) {
             if (c.isAlive && c != player)
                 c.doAi();
@@ -61,7 +75,11 @@ class PlayScreen extends Screen {
 
         var stillAlive = new Array<Creature>();
         for (c in creatures) {
-            c.update();
+            if (isOnFire(c.x, c.y, c.z))
+                c.takeDamage(4, null);
+
+            if (c.isAlive)
+                c.update();
             if (c.isAlive)
                 stillAlive.push(c);
         }
@@ -105,6 +123,7 @@ class PlayScreen extends Screen {
                 inAir.push(c);
         }
         if (projectiles.length == 0 && inAir.length == 0) {
+            rl.trigger("redraw");
             isAnimating = false;
             if (updateAfterAnimating)
                 update();
@@ -235,11 +254,17 @@ class PlayScreen extends Screen {
             bg = Color.hsv(220, 50, 5);
         } else if (tile == tile_water) {
             glyph = "=";
-            fg = Color.hsv(220, 35 + Math.random() * 10, 25);
-            bg = Color.hsv(220, 30 + Math.random() * 10, 20);
+            fg = Color.hsv(220 + Math.random() * 10, 30 + Math.random() * 2, 20);
+            bg = Color.hsv(220 + Math.random() * 10, 25 + Math.random() * 2, 15);
         } else if (tile == tile_bridge) {
             fg = Color.hsv(60, 33, 12);
             bg = Color.hsv(60, 33,  8);
+        }
+
+        if (isOnFire(x, y, z)) {
+            glyph = "*";
+            fg = Color.hsv(Math.random() * 10, 75 + Math.random() * 5, 75 + Math.random() * 5);
+            bg = Color.hsv(Math.random() *  5, 75 + Math.random() * 5, 25 + Math.random() * 5);
         }
 
         if ((x+y) % 2 == 0) {
@@ -252,6 +277,18 @@ class PlayScreen extends Screen {
 
     public function addMessage(text:String):Void {
         messages.push(text);
+    }
+
+    public function isOnFire(x:Int, y:Int, z:Int):Bool {
+        return fireMap.get('$x,$y,$z') == true;
+    }
+
+    public function addFire(x:Int, y:Int, z:Int):Void {
+        if (blocksMovement(x, y, z) || isEmptySpace(x, y, z) || tiles.get(x, y, z) == tile_water)
+            return;
+
+        fireMap.set('$x,$y,$z', true);
+        fireList.push('$x,$y,$z');
     }
 
     public function addItem(item:Item, x:Int, y:Int, z:Int):Void {
@@ -493,9 +530,36 @@ class PlayScreen extends Screen {
                 }
                 world.update();
             }));
+        }},
+        { name:"[p]ain orb", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
+                enter(new AimScreen(this, self, 20, function(tx:Int, ty:Int):Void {
+                    self.useDice(number, sides);
+                    var bonus = number + "d" + sides + "+0";
+                    var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "*", Color.hsv(300, 90, 90));
+                    p.accuracyStat = Dice.add(self.accuracyStat, bonus);
+                    p.damageStat = Dice.add(self.damageStat, bonus);
+                    self.world.addProjectile(p);
+                }));
+            }));
+        }},
+        { name:"[e]xplosion", callback: function(world:PlayScreen, self:Creature):Void {
+            enter(new SelectDiceScreen(this, self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
+                enter(new AimScreen(this, self, 20, function(tx:Int, ty:Int):Void {
+                    self.useDice(number, sides);
+                    var radius = Dice.rollExact(number, sides, 0);
+                    for (ox in -radius ... radius+1)
+                    for (oy in -radius ... radius+1) {
+                        if (ox*ox+oy*oy > radius*radius || Math.random() < 0.1)
+                            continue;
+                        self.world.addFire(tx+ox, ty+oy, self.z);
+                    }
+                }));
+            }));
         }}
         ];
 
+        player.actions.push(actions[actions.length-2]);
         player.actions.push(actions[actions.length-1]);
 
         while (player.actions.length < amount) {
