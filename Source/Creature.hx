@@ -114,6 +114,38 @@ class Creature {
         ai.update();
     }
 
+    public function runFrom(other:Creature):Void {
+        var here = new IntPoint(x, y);
+        var there = new IntPoint(other.x, other.y);
+
+        var dist = here.distanceTo(there);
+
+        var candidates = new Array<IntPoint>();
+
+        for (candidate in here.neighbors8()) {
+            var dist2 = candidate.distanceTo(there);
+            if (dist2 < dist && Math.random() < 0.9)
+                continue;
+
+            if (world.isEmptySpace(candidate.x, candidate.y, z) && Math.random() < 0.80)
+                continue;
+
+            if (world.blocksMovement(candidate.x, candidate.y, z))
+                continue;
+
+            candidates.push(candidate);
+        }
+
+        if (candidates.length == 0) {
+            wander();
+            return;
+        }
+
+        var candidate = candidates[Math.floor(Math.random() * candidates.length)];
+        
+        move(candidate.x-x, candidate.y-y, 0);
+    }
+
     public function wander():Void {
         var mx = Math.floor(Math.random() * 3) - 1;
         var my = Math.floor(Math.random() * 3) - 1;
@@ -279,6 +311,12 @@ class Creature {
             isAlive = false;
             if (attacker != null)
                 attacker.gainDice(3);
+            if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
+                for (c in world.creatures) {
+                    if (c.canSee(this) && c.glyph != "@")
+                        c.fearCounter += Math.floor(Math.random() * 5) + 5;
+                }
+            }
         }
     }
 

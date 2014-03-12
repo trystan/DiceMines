@@ -273,7 +273,7 @@ class Factory {
                     self.useDice(number, sides);
                     self.animatePath = Bresenham.line(self.x, self.y, tx, ty).points;
                     self.animatePath.shift();
-                    world.addMessage('${self.fullName} jumps');
+                    world.addMessage('${self.fullName} uses ${number}d$sides to jump');
                 }));
             }));
         }),
@@ -281,7 +281,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll for knockback distance?", function(number:Int, sides:Int):Void {
                 var amount = Dice.rollExact(number, sides, 0);
                 self.useDice(number, sides);
-                world.addMessage('${self.fullName} prepares a knockback attack');
+                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a knockback attack');
                 world.update();
                 self.nextAttackEffects.push(function (self:Creature, target:Creature){
                     var dx = target.x - self.x + Math.random() - 0.5;
@@ -298,7 +298,7 @@ class Factory {
         }),
         new Ability("disarming attack", "A successfull hit makes your opponent drop their weapon or armor.", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
-                world.addMessage('${self.fullName} prepares to disarm someone');
+                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a disarming attack');
                 world.update();
                 var amount = number + "d" + sides;
                 self.useDice(number, sides);
@@ -325,7 +325,7 @@ class Factory {
         }),
         new Ability("wounding attack", "A successfull hit drains a stat for several turns.", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
-                world.addMessage('${self.fullName} prepares a wounding attack');
+                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a wounding attack');
                 world.update();
                 self.useDice(number, sides);
                 self.nextAttackEffects.push(function (self:Creature, target:Creature){
@@ -347,7 +347,7 @@ class Factory {
         new Ability("rapid attack", "A successfull hit causes several free melee attacks on adjacent creatures.", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
-                world.addMessage('${self.fullName} prepares for a rapid attack');
+                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a rapid attack');
                 world.update();
                 self.nextAttackEffects.push(function (self:Creature, target:Creature):Void {
                     var attacks = Dice.rollExact(number, sides, 0);
@@ -369,7 +369,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
                 self.invisibleCounter = Dice.rollExact(number, sides, 0);
                 self.useDice(number, sides);
-                world.addMessage('${self.fullName} sneaks away');
+                world.addMessage('${self.fullName} uses ${number}d$sides to sneaks away');
                 world.update();
             }));
         }),
@@ -377,7 +377,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
                 var amount = number + "d" + sides + "+0";
                 self.useDice(number, sides);
-                world.addMessage('${self.fullName} focuses on accuracy');
+                world.addMessage('${self.fullName} uses ${number}d$sides to boost accuracy');
                 world.update();
                 self.accuracyStat = Dice.add(self.accuracyStat, amount);
                 self.nextAttackEffects.push(function (self:Creature, target:Creature){
@@ -389,7 +389,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
                 var amount = number + "d" + sides + "+0";
                 self.useDice(number, sides);
-                world.addMessage('${self.fullName} focuses on damage');
+                world.addMessage('${self.fullName} uses ${number}d$sides to boost damage');
                 world.update();
                 self.damageStat = Dice.add(self.damageStat, amount);
                 self.nextAttackEffects.push(function (self:Creature, target:Creature){
@@ -401,6 +401,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var count = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to cast $count magic missiles');
                 for (i in 0 ... count) {
                     var candidates = new Array<Creature>();
                     for (c in world.creatures) {
@@ -425,6 +426,7 @@ class Factory {
                 world.enter(new AimScreen(world, self, 10, function(tx:Int, ty:Int):Void {
                     self.useDice(number, sides);
                     var bonus = number + "d" + sides + "+0";
+                    world.addMessage('${self.fullName} uses ${number}d$sides to cast an orb of pain');
                     var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "*", "orb of pain", Color.hsv(300, 90, 90));
                     p.accuracyStat = Dice.add(self.accuracyStat, bonus);
                     p.damageStat = Dice.add(self.damageStat, bonus);
@@ -436,6 +438,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
                 world.enter(new AimScreen(world, self, 20, function(tx:Int, ty:Int):Void {
                     self.useDice(number, sides);
+                    world.addMessage('${self.fullName} uses ${number}d$sides to cast an explosion');
                     var radius = Dice.rollExact(number, sides, 0);
                     for (ox in -radius ... radius+1)
                     for (oy in -radius ... radius+1) {
@@ -450,12 +453,13 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to intimidate orcs and lizardfolk for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
                         for (c in world.creatures) {
                             if (c.isSentient && self.canSee(c))
-                                c.fearCounter++;
+                                c.fearCounter += 2;
                         }
                     }
                 });
@@ -465,12 +469,13 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to sooth arachnids and bears for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
                         for (c in world.creatures) {
                             if (c.isAnimal && self.canSee(c))
-                                c.sleepCounter++;
+                                c.sleepCounter += 2;
                         }
                     }
                 });
@@ -480,6 +485,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to damage ghosts and skeletons for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
@@ -495,6 +501,7 @@ class Factory {
             world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to heal allies for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
@@ -516,6 +523,7 @@ class Factory {
                 }
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to buff the attack of allies for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
@@ -541,6 +549,7 @@ class Factory {
                 }
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);
+                world.addMessage('${self.fullName} uses ${number}d$sides to buff the defences of allies for $duration turns');
                 world.effects.push({
                     countdown: duration,
                     func: function(turn:Int):Void {
@@ -563,15 +572,15 @@ class Factory {
                     self.useDice(number, sides);
                     var other = world.getCreature(tx, ty, self.z);
                     if (other == null) {
-                        world.addMessage('${self.fullName} smites nothing in particular');
+                        world.addMessage('${self.fullName} uses ${number}d$sides to smite nothing in particular');
                     } else {
                         var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
                         if (diff > 0) {
                             diff *= 2;
-                            world.addMessage('${self.fullName} smites ${other.fullName} for ${diff} damage');
+                            world.addMessage('${self.fullName} uses ${number}d$sides to smite ${other.fullName} for ${diff} damage');
                             other.takeDamage(diff, self);
                         } else
-                            world.addMessage('${self.fullName} fails to smite ${other.fullName} by ${diff}');
+                            world.addMessage('${self.fullName} uses ${number}d$sides to fail to smite ${other.fullName} by ${diff}');
                     }
                 }));
             }));

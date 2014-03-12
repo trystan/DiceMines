@@ -24,8 +24,13 @@ class NpcAi {
     public function update():Void {
         world = target.world;
 
+        if (target.sleepCounter > 0)
+            return;
+
         if (target.canSee(world.player)) {
-            if (target.rangedWeapon != null) {
+            if (target.fearCounter > 0)
+                target.runFrom(world.player);
+            else if (target.rangedWeapon != null) {
                 if (Math.random() < 0.5)
                     target.rangedAttack(world.player.x, world.player.y);
                 else
