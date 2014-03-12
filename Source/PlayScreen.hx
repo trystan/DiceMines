@@ -557,7 +557,7 @@ class PlayScreen extends Screen {
 
                 tiles.set(p.x, p.y, z, tile_water);
 
-                for (p2 in p.neighbors8()) {
+                for (p2 in p.neighbors4()) {
                     if (tiles.isInBounds(p2.x, p2.y, z) && tiles.get(p2.x, p2.y, z) == tile_empty && openString.indexOf('[${p2.x},${p2.y}]') == -1) {
                         open.push(p2);
                         openString += '[${p2.x},${p2.y}]';

@@ -46,13 +46,20 @@ class Factory {
                 c.gainDice(3);
         }
 
-        c.maxHp += Dice.roll("2d2+2");
+        c.maxHp += Dice.roll("2d6+0") - 2;
         c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.resistanceStat = Dice.add(c.resistanceStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
         c.gainDice(Dice.roll("1d4+0"));
+
+        if (Math.random() < 0.1)
+            c.meleeWeapon = meleeWeapon();
+        if (Math.random() < 0.1)
+            c.rangedWeapon = rangedWeapon();
+        if (Math.random() < 0.1)
+            c.armor = armor();
 
         var amount = 3;
         if (Math.random() < 0.25)
@@ -405,8 +412,9 @@ class KnockBackAbility extends Ability {
             dy *= amount;
 
             target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
+            while (target.animatePath.length > 0 && (target.animatePath[0].equals(self.x, self.y) || target.animatePath[0].equals(target.x, target.y)))
             while (target.animatePath.length > amount)
-            target.animatePath.pop();
+                target.animatePath.pop();
         });
     }
 }
@@ -754,7 +762,7 @@ class ExplosionAbility extends Ability {
 }
 
 class IntimidateAbility extends Ability {
-    public function new() { super("intimidate", "Freighten all orcs and lizardfolk you see"); } 
+    public function new() { super("intimidate", "Freighten all enemies who see you"); } 
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
@@ -775,26 +783,21 @@ class IntimidateAbility extends Ability {
     private function doIt(self:Creature, number:Int, sides:Int):Void {
         self.useDice(number, sides);
         var duration = Dice.rollExact(number, sides, 0);
-        self.world.addMessage('${self.fullName} uses ${number}d$sides to intimidate orcs and lizardfolk for $duration turns');
-        self.world.effects.push({
-            countdown: duration,
-            func: function(turn:Int):Void {
-                for (c in self.world.creatures) {
-                    if (c.isSentient && self.canSee(c)) {
-                        c.fearCounter += 2;
-                    }
-                }
+        self.world.addMessage('${self.fullName} uses ${number}d$sides to intimidate enemies for $duration turns');
+        for (c in self.world.creatures) {
+            if (c.canSee(self) && c.glyph != "@") {
+                c.fearCounter = duration;
             }
-        });
+        }
     }
 }
 
 class SootheAbility extends Ability {
-    public function new() { super("soothe", "Put to sleep all arachnids and bears you see"); }
+    public function new() { super("soothe", "Put all enemies who see you to sleep"); }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isAnimal ? 0 : 0.10,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.10,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -811,17 +814,12 @@ class SootheAbility extends Ability {
     private function doIt(self:Creature, number:Int, sides:Int):Void {
         self.useDice(number, sides);
         var duration = Dice.rollExact(number, sides, 0);
-        self.world.addMessage('${self.fullName} uses ${number}d$sides to sooth arachnids and bears for $duration turns');
-        self.world.effects.push({
-            countdown: duration,
-            func: function(turn:Int):Void {
-                for (c in self.world.creatures) {
-                    if (c.isAnimal && self.canSee(c)) {
-                        c.sleepCounter += 2;
-                    }
-                }
+        self.world.addMessage('${self.fullName} uses ${number}d$sides to sooth enemies for $duration turns');
+        for (c in self.world.creatures) {
+            if (c.canSee(self) && c.glyph != "@") {
+                c.sleepCounter = duration;
             }
-        });
+        }
     }
 }
 

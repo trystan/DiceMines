@@ -31,6 +31,48 @@ class Creature {
     public var sleepCounter:Int = 0;
     public var fearCounter:Int = 0;
 
+    public function effectiveAccuracyStat(scenario:String):String {
+        var s = accuracyStat;
+        if (armor != null) s = Dice.add(s, armor.accuracyStat);
+        if (scenario != "melee" && rangedWeapon != null) s = Dice.add(s, rangedWeapon.accuracyStat);
+        if (scenario != "ranged" && meleeWeapon != null) s = Dice.add(s, meleeWeapon.accuracyStat);
+        return s;
+    }
+
+    public function effectiveDamageStat(scenario:String):String {
+        var s = damageStat;
+        if (armor != null) s = Dice.add(s, armor.damageStat);
+        if (scenario != "melee" && rangedWeapon != null) s = Dice.add(s, rangedWeapon.damageStat);
+        if (scenario != "ranged" && meleeWeapon != null) s = Dice.add(s, meleeWeapon.damageStat);
+        return s;
+    }
+
+    public function effectiveEvasionStat(scenario:String):String {
+        var s = evasionStat;
+        if (armor != null) s = Dice.add(s, armor.evasionStat);
+        if (scenario != "melee" && rangedWeapon != null) s = Dice.add(s, rangedWeapon.evasionStat);
+        if (scenario != "ranged" && meleeWeapon != null) s = Dice.add(s, meleeWeapon.evasionStat);
+        return s;
+    }
+
+    public function effectiveResistanceStat(scenario:String):String {
+        var s = resistanceStat;
+        if (armor != null) s = Dice.add(s, armor.resistanceStat);
+        if (scenario != "melee" && rangedWeapon != null) s = Dice.add(s, rangedWeapon.resistanceStat);
+        if (scenario != "ranged" && meleeWeapon != null) s = Dice.add(s, meleeWeapon.resistanceStat);
+        return s;
+    }
+
+    public function effectivePietyStat(scenario:String):String {
+        var s = pietyStat;
+        if (armor != null) s = Dice.add(s, armor.pietyStat);
+        if (scenario != "melee" && rangedWeapon != null) s = Dice.add(s, rangedWeapon.pietyStat);
+        if (scenario != "ranged" && meleeWeapon != null) s = Dice.add(s, meleeWeapon.pietyStat);
+        return s;
+    }
+
+
+
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
     public var abilities:Array<Ability>;
     public var animatePath:Array<IntPoint>;
@@ -218,13 +260,8 @@ class Creature {
                      "-1,1"  => "/", "0,1"  => "|", "1,1" => "\\"];
         var p = new Projectile(x, y, z, tx, ty, this, "arrow", glyph.get(mx + "," + my), Color.hsv(0, 10, 90));
         
-        p.accuracyStat = accuracyStat;
-        if (rangedWeapon != null) p.accuracyStat = Dice.add(p.accuracyStat, rangedWeapon.accuracyStat);
-        if (armor != null) p.accuracyStat = Dice.add(p.accuracyStat, armor.accuracyStat);
-
-        p.damageStat = damageStat;
-        if (rangedWeapon != null) p.damageStat = Dice.add(p.damageStat, rangedWeapon.damageStat);
-        if (armor != null) p.damageStat = Dice.add(p.damageStat, armor.damageStat);
+        p.accuracyStat = effectiveAccuracyStat("ranged");
+        p.damageStat = effectiveDamageStat("ranged");
 
         world.addProjectile(p);
     }
@@ -246,11 +283,7 @@ class Creature {
     public function takeRangedAttack(projectile:Projectile):Void {
         reveal();
         var accuracy = Dice.roll(projectile.accuracyStat);
-
-        var effectiveEvasionStat = evasionStat;
-        if (meleeWeapon != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, meleeWeapon.evasionStat);
-        if (armor != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, armor.evasionStat);
-        var evasion = Dice.roll(effectiveEvasionStat);
+        var evasion = Dice.roll(effectiveEvasionStat("ranged"));
 
         if (accuracy < evasion) {
             world.addMessage('$fullName ${quantify(evasion-accuracy)} evades ${projectile.owner.fullName}\'s ${projectile.name}'); //'
@@ -259,11 +292,7 @@ class Creature {
         }
 
         var damage = Dice.roll(projectile.damageStat);
-
-        var effectiveResistanceStat = evasionStat;
-        if (meleeWeapon != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, meleeWeapon.resistanceStat);
-        if (armor != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, armor.resistanceStat);
-        var resistance = Dice.roll(effectiveResistanceStat);
+        var resistance = Dice.roll(effectiveResistanceStat("ranged"));
 
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
         if (damage == resistance)
@@ -325,7 +354,7 @@ class Creature {
             if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
                 for (c in world.creatures) {
                     if (c.canSee(this) && c.glyph != "@")
-                        c.fearCounter += Math.floor(Math.random() * 5) + 5;
+                        c.fearCounter += Math.floor(Math.random() * 11) + 3;
                 }
             }
         }
@@ -342,15 +371,8 @@ class Creature {
         reveal();
         other.reveal();
 
-        var effectiveAccuracyStat = accuracyStat;
-        if (meleeWeapon != null) effectiveAccuracyStat = Dice.add(effectiveAccuracyStat, meleeWeapon.accuracyStat);
-        if (armor != null) effectiveAccuracyStat = Dice.add(effectiveAccuracyStat, armor.accuracyStat);
-        var accuracy = Dice.roll(effectiveAccuracyStat);
-
-        var effectiveEvasionStat = other.evasionStat;
-        if (other.meleeWeapon != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, other.meleeWeapon.evasionStat);
-        if (other.armor != null) effectiveEvasionStat = Dice.add(effectiveEvasionStat, other.armor.evasionStat);
-        var evasion = Dice.roll(effectiveEvasionStat);
+        var accuracy = Dice.roll(effectiveAccuracyStat("melee"));
+        var evasion = Dice.roll(other.effectiveEvasionStat("melee"));
 
         if (accuracy < evasion) {
             world.addMessage('${other.fullName} ${quantify(evasion-accuracy)} evades $fullName');
@@ -358,15 +380,8 @@ class Creature {
             return;
         }
 
-        var effectiveDamageStat = damageStat;
-        if (meleeWeapon != null) effectiveDamageStat = Dice.add(effectiveDamageStat, meleeWeapon.damageStat);
-        if (armor != null) effectiveDamageStat = Dice.add(effectiveDamageStat, armor.damageStat);
-        var damage = Dice.roll(effectiveDamageStat);
-
-        var effectiveResistanceStat = other.resistanceStat;
-        if (other.meleeWeapon != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, other.meleeWeapon.resistanceStat);
-        if (other.armor != null) effectiveResistanceStat = Dice.add(effectiveResistanceStat, other.armor.resistanceStat);
-        var resistance = Dice.roll(effectiveResistanceStat);
+        var damage = Dice.roll(effectiveDamageStat("melee"));
+        var resistance = Dice.roll(other.effectiveResistanceStat("melee"));
 
         var actualDamage = Math.floor(Math.max(0, damage - resistance));
         if (damage == resistance)

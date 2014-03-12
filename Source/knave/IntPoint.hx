@@ -9,12 +9,27 @@ class IntPoint {
         this.y = y;
     }
 
+    public function equals(x:Int, y:Int):Bool {
+        return this.x == x && this.y == y;
+    }
+
     public function plus(other:IntPoint):IntPoint {
         return new IntPoint(x+other.x, y+other.y);
     }
 
     public function minus(other:IntPoint):IntPoint {
         return new IntPoint(x-other.x, y-other.y);
+    }
+
+    public function offsets4():Array<IntPoint> {
+        return [new IntPoint(-1,0), new IntPoint(0,-1), new IntPoint(0,1), new IntPoint(1,0)];
+    }
+
+    public function neighbors4():Array<IntPoint> {
+        var all = new Array<IntPoint>();
+        for (offset in offsets4())
+            all.push(this.plus(offset));
+        return all;
     }
 
     public function offsets8():Array<IntPoint> {
