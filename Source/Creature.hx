@@ -67,6 +67,8 @@ class Creature {
         evasionStat = "3d3+0";
         resistanceStat = "3d3+0";
         pietyStat = "2d2+0";
+
+        gainDice(5);
     }
 
     public function getPronoun():String {
@@ -282,16 +284,26 @@ class Creature {
             func(projectile.owner, this);
     }
 
+    public function addWound(wound:{ countdown:Int, stat:String, modifier:String }):Void {
+        switch (wound.stat) {
+            case "accuracy": accuracyStat = Dice.subtract(accuracyStat, wound.modifier);
+            case "evasion": evasionStat = Dice.subtract(evasionStat, wound.modifier);
+            case "damage": damageStat = Dice.subtract(damageStat, wound.modifier);
+            case "resistance": resistanceStat = Dice.subtract(resistanceStat, wound.modifier);
+        }
+        wounds.push(wound);
+    }
+
     public function recoverFromWounds():Void {
         var newWounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
         for (w in wounds) {
-                switch (w.stat) {
-                    case "accuracy": accuracyStat = Dice.subtract(accuracyStat, w.modifier);
-                    case "evasion": evasionStat = Dice.subtract(evasionStat, w.modifier);
-                    case "damage": damageStat = Dice.subtract(damageStat, w.modifier);
-                    case "resistance": resistanceStat = Dice.subtract(resistanceStat, w.modifier);
-                }
             if (w.countdown == 0) {
+                switch (w.stat) {
+                    case "accuracy": accuracyStat = Dice.add(accuracyStat, w.modifier);
+                    case "evasion": evasionStat = Dice.add(evasionStat, w.modifier);
+                    case "damage": damageStat = Dice.add(damageStat, w.modifier);
+                    case "resistance": resistanceStat = Dice.add(resistanceStat, w.modifier);
+                }
             } else {
                 w.countdown--;
                 newWounds.push(w);
@@ -373,6 +385,25 @@ class Creature {
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
         for (func in effects)
             func(this, other);
+    }
+
+    public function hasDice():Bool {
+        for (i in 0 ... dice.length) {
+            if (dice[i] > 0)
+                return true;
+        }
+        return false;
+    }
+
+    public function getDiceToUseForAbility(): { number:Int, sides:Int } {
+        var candidates = new Array<{ number:Int, sides:Int }>();
+        for (i in 0 ... dice.length) {
+            if (dice[i] > 0)
+                candidates.push({ number: dice[i], sides: i+1 });
+        }
+        if (candidates.length == 0)
+            return null;
+        return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
     public function gainDice(amount:Int):Void {

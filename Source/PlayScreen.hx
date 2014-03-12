@@ -7,8 +7,8 @@ class PlayScreen extends Screen {
     private var heights:Grid3<Float>;
     private var tiles:Grid3<Int>;
     
-    private var floorHeight = 0.40;
-    private var wallHeight = 0.55;
+    private var floorHeight = 0.44;
+    private var wallHeight = 0.58;
 
     private var tile_floor:Int = 250;
     private var tile_wall:Int = 177;
@@ -112,23 +112,23 @@ class PlayScreen extends Screen {
         if (isAnimating)
             return;
 
-        if (key == "f" && player.rangedWeapon != null)
+        if (key == "f" && player.rangedWeapon != null) {
             enter(new AimScreen(player, 40, function(x:Int,y:Int):Void {
                 player.rangedAttack(x, y);
                 updateAfterAnimating = true;
             }));
-        else if (key == "g")
+        } else if (key == "g") {
             player.pickupItem();
-        else {
+            update();
+        } else {
             for (ability in player.abilities) {
                 if (ability.name.charAt(0) == key) {
                     ability.playerUsage(player);
+                    updateAfterAnimating = true;
                     break;
                 }
             }
         }
-
-        rl.trigger("redraw");
     }
 
     private function animate():Void {
@@ -371,7 +371,11 @@ class PlayScreen extends Screen {
         for (z in 0 ... d)
             heights.set(x, y, z, Math.random());
 
-        disrupt(Math.floor(heights.width * heights.height * heights.depth / 10));
+#if neko
+        disrupt(Math.floor(heights.width * heights.height * heights.depth / 5));
+#else
+        disrupt(Math.floor(heights.width * heights.height * heights.depth / 100));
+#end
         smooth();
         normalize();
         carveFloors();

@@ -28,6 +28,14 @@ class IntPoint {
         return all;
     }
 
+    public function neighbors9():Array<IntPoint> {
+        var all = new Array<IntPoint>();
+        all.push(this);
+        for (offset in offsets8())
+            all.push(this.plus(offset));
+        return all;
+    }
+
     public function distanceTo(other:IntPoint):Float {
         return Math.sqrt(distanceSquaredTo(other));
     }
