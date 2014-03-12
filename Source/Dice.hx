@@ -22,6 +22,11 @@ class Dice {
         var sidesC = sidesA + sidesB;
         var bonusC = bonusA + bonusB;
 
+        if (sidesC < 0) {
+            sidesC = Math.floor(Math.abs(sidesC));
+            numberC = -Math.floor(Math.abs(numberC));
+        }
+
         return numberC + "d" + sidesC + "+" + bonusC;
     }
 
@@ -38,8 +43,14 @@ class Dice {
         var sidesC = sidesA - sidesB;
         var bonusC = bonusA - bonusB;
 
+        if (sidesC < 0) {
+            sidesC = Math.floor(Math.abs(sidesC));
+            numberC = -Math.floor(Math.abs(numberC));
+        }
+
         return numberC + "d" + sidesC + "+" + bonusC;
     }
+
     public static function roll(what:String):Int {
         var number = Std.parseInt(what.split("d")[0]);
         var sides = Std.parseInt(what.split("d")[1].split("+")[0]) * (number < 0 ? -1 : 1);

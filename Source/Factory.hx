@@ -234,7 +234,7 @@ class Factory {
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
         i.pietyStat = def.piety;
-        return i;
+        return maybeBetter(i);
     }
 
     public static function meleeWeapon():Item {
@@ -252,7 +252,7 @@ class Factory {
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
         i.pietyStat = def.piety;
-        return i;
+        return maybeBetter(i);
     }
 
     public static function armor():Item {
@@ -270,7 +270,27 @@ class Factory {
         i.damageStat = def.damage;
         i.resistanceStat = def.resistance;
         i.pietyStat = def.piety;
-        return i;
+        return maybeBetter(i);
+    }
+
+    public static function maybeBetter(item:Item):Item {
+        if (Math.random() < 0.25)
+            item = addStatBonusToItem(item);
+        return item;
+    }
+
+    public static function addStatBonusToItem(item:Item):Item {
+        var bonus = "1d1+1";
+        var modifier = "";
+        switch (Math.floor(Math.random() * 5)) {
+            case 0: item.accuracyStat = Dice.add(item.accuracyStat, bonus); modifier = "accurate ";
+            case 1: item.damageStat = Dice.add(item.damageStat, bonus); modifier = "damaging ";
+            case 2: item.evasionStat = Dice.add(item.evasionStat, bonus); modifier = "evasive ";
+            case 3: item.resistanceStat = Dice.add(item.resistanceStat, bonus); modifier = "resistant ";
+            case 4: item.pietyStat = Dice.add(item.pietyStat, bonus); modifier = "holy ";
+        }
+        item.name = modifier + item.name;
+        return item;
     }
 
     public static function item():Item {
