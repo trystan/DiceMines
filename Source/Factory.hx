@@ -20,7 +20,7 @@ class Factory {
                 c.meleeWeapon = meleeWeapon();
                 if (Math.random() < 0.5)
                     c.armor = armor();
-                potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "disarming attack", "rapid attack"];
+                potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "disarming attack", "rapid attack", "intimidate"];
             case 1: // ranged
                 c.maxHp += Dice.roll("2d2+2");
                 c.accuracyStat = Dice.add(c.accuracyStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
@@ -30,18 +30,18 @@ class Factory {
                     c.armor = armor();
                 potentialAbilityNames = ["accuracy boost", "damage boost", "Knockback", "Jump", "wounding attack"];
             case 2: // magic
-                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain" ,"explosion"];
+                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain", "explosion"];
                 c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.gainDice(10);
             case 3: // piety
-                potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite"];
+                potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
                 c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                 c.gainDice(5);
             case 4: // stealth
                 c.evasionStat = Dice.add(c.evasionStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak"];
+                potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak", "soothe"];
                 c.gainDice(3);
         }
 
@@ -93,9 +93,10 @@ class Factory {
         return c;
     }
 
-    public static function spider(z:Int):Creature {
-        var c = new Creature("s", "spider", 0, 0, 0);
+    public static function arachnid(z:Int):Creature {
+        var c = new Creature("a", "arachnid", 0, 0, 0);
         c.accuracyStat = "5d5+5";
+        c.isAnimal = true;
         c.abilities.push(ability("jump"));
         return maybeBig(c, z);
     }
@@ -103,6 +104,7 @@ class Factory {
     public static function bear(z:Int):Creature {
         var c = new Creature("b", "bear", 0, 0, 0);
         c.damageStat = "5d5+5";
+        c.isAnimal = true;
         c.abilities.push(ability("rapid attack"));
         return maybeBig(c, z);
     }
@@ -115,25 +117,37 @@ class Factory {
         return maybeBig(c, z);
     }
 
-    public static function zombie(z:Int):Creature {
-        var c = new Creature("z", "zombie", 0, 0, 0);
+    public static function skeleton(z:Int):Creature {
+        var c = new Creature("s", "skeleton", 0, 0, 0);
         c.resistanceStat = "5d5+5";
         c.isUndead = true;
         return c;
     }
 
+    public static function lizardfolk(z:Int):Creature {
+        var c = new Creature("l", "lizardfolk", 0, 0, 0);
+        c.pietyStat = "5d5+5";
+        c.isSentient = true;
+        c.abilities.push(ability("pious attack"));
+        c.abilities.push(ability("pious defence"));
+        c.abilities.push(ability("smite"));
+        return maybeBig(c, z);
+    }
+
     public static function orc(z:Int):Creature {
         var c = new Creature("o", "orc", 0, 0, 0);
         c.rangedWeapon = orcishBow();
+        c.isSentient = true;
         return maybeBig(c, z);
     }
 
     public static function enemy(z:Int):Creature {
-        switch (Math.floor(Math.random() * 5)) {
-            case 0: return spider(z);
+        switch (Math.floor(Math.random() * 6)) {
+            case 0: return arachnid(z);
             case 1: return bear(z);
             case 2: return ghost(z);
-            case 3: return zombie(z);
+            case 3: return skeleton(z);
+            case 4: return lizardfolk(z);
             default: return orc(z);
         }
     }
@@ -144,7 +158,7 @@ class Factory {
                 var list = new Array<Creature>();
                 var count = Math.floor(2 + Math.random() * 5);
                 for (i in 0 ... count)
-                    list.push(spider(z));
+                    list.push(arachnid(z));
                 return list;
 
             case 1:
@@ -155,7 +169,12 @@ class Factory {
                 return list;
 
             case 2: return [ghost(z)];
-            case 3: return [zombie(z)];
+            case 3:
+                var list = new Array<Creature>();
+                var count = Dice.roll("3d3");
+                for (i in 0 ... count)
+                    list.push(skeleton(z));
+                return list;
 
             default:
                 var list = new Array<Creature>();
@@ -212,7 +231,7 @@ class Factory {
                     { name:"medium armor",    accuracy:"0d0+0", evasion:"-1d2+0", damage:"0d0+0", resistance:"2d2+0", piety:"0d0+0" },
                     { name:"heavy armor",     accuracy:"0d0+0", evasion:"-2d2+0", damage:"0d0+0", resistance:"2d3+0", piety:"0d0+0" },
                     { name:"silver armor",    accuracy:"0d0+0", evasion:"-1d1+5", damage:"0d0+0", resistance:"1d1+5", piety:"0d0+0" },
-                    { name:"unholy bow",      accuracy:"0d0+0", evasion: "1d1+1", damage:"0d0+0", resistance:"1d1+1", piety:"-3d3+0" }];
+                    { name:"unholy armor",      accuracy:"0d0+0", evasion: "1d1+1", damage:"0d0+0", resistance:"1d1+1", piety:"-3d3+0" }];
 
         var def = list[Math.floor(Math.random() * list.length)];
         var i = new Item("[", Color.hsv(90, 40, 80), "armor", def.name);
@@ -427,7 +446,37 @@ class Factory {
                 }));
             }));
         }),
-        new Ability("turn undead", "Damage all visible ghosts and zombies", function(world:PlayScreen, self:Creature):Void {
+        new Ability("intimidate", "Freighten all orcs and lizardfolk you see", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        for (c in world.creatures) {
+                            if (c.isSentient && self.canSee(c))
+                                c.fearCounter++;
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("soothe", "Put to sleep all arachnids and bears you see", function(world:PlayScreen, self:Creature):Void {
+            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+                self.useDice(number, sides);
+                var duration = Dice.rollExact(number, sides, 0);
+                world.effects.push({
+                    countdown: duration,
+                    func: function(turn:Int):Void {
+                        for (c in world.creatures) {
+                            if (c.isAnimal && self.canSee(c))
+                                c.sleepCounter++;
+                        }
+                    }
+                });
+            }));
+        }),
+        new Ability("turn undead", "Damage all visible ghosts and skeletons", function(world:PlayScreen, self:Creature):Void {
             world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
                 self.useDice(number, sides);
                 var duration = Dice.rollExact(number, sides, 0);

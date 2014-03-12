@@ -26,6 +26,10 @@ class Creature {
     public var resistanceStat:String;
     public var pietyStat:String;
     public var isUndead:Bool = false;
+    public var isAnimal:Bool = false;
+    public var isSentient:Bool = false;
+    public var sleepCounter:Int = 0;
+    public var fearCounter:Int = 0;
 
     public var wounds:Array<{ countdown:Int, stat:String, modifier:String }>;
     public var abilities:Array<Ability>;
@@ -350,6 +354,11 @@ class Creature {
     }
 
     public function update():Void {
+        if (fearCounter > 0)
+            fearCounter--;
+        if (sleepCounter > 0)
+            sleepCounter--;
+
         if (invisibleCounter == 1)
             reveal();
         else if (invisibleCounter > 0)
