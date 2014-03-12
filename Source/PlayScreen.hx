@@ -382,6 +382,7 @@ class PlayScreen extends Screen {
 
         makeTiles();
         addPillars();
+        addWater();
         addBridges();
         addStairs();
 
@@ -537,6 +538,35 @@ class PlayScreen extends Screen {
             }
         }
     }
+
+    private function addWater():Void {
+        for (z in 0 ... heights.depth) {
+            var cx = Math.floor(Math.random() * (heights.width - 10) + 5);
+            var cy = Math.floor(Math.random() * (heights.height - 10) + 5);
+
+            if (tiles.get(cx, cy, z) != tile_empty)
+                continue;
+
+            var open = new Array<IntPoint>();
+            open.push(new IntPoint(cx, cy));
+
+            var openString = '[$cx,$cy]';
+
+            while (open.length > 0) {
+                var p = open.shift();
+
+                tiles.set(p.x, p.y, z, tile_water);
+
+                for (p2 in p.neighbors8()) {
+                    if (tiles.isInBounds(p2.x, p2.y, z) && tiles.get(p2.x, p2.y, z) == tile_empty && openString.indexOf('[${p2.x},${p2.y}]') == -1) {
+                        open.push(p2);
+                        openString += '[${p2.x},${p2.y}]';
+                    }
+                }
+            }
+        }
+    }
+
 
     private function addBridges():Void {
         for (z in 0 ... heights.depth) {

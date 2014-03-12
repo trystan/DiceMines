@@ -128,6 +128,15 @@ class Factory {
         return c;
     }
 
+    public static function fairy(z:Int):Creature {
+        var c = new Creature("f", "fairy", 0, 0, 0);
+        c.isSentient = true;
+        c.abilities.push(ability("magic missiles"));
+        c.abilities.push(ability("orb of pain"));
+        c.abilities.push(ability("explosion"));
+        return maybeBig(c, z);
+    }
+
     public static function lizardfolk(z:Int):Creature {
         var c = new Creature("l", "lizardfolk", 0, 0, 0);
         c.pietyStat = "5d5+5";
@@ -146,18 +155,19 @@ class Factory {
     }
 
     public static function enemy(z:Int):Creature {
-        switch (Math.floor(Math.random() * 6)) {
+        switch (Math.floor(Math.random() * 7)) {
             case 0: return arachnid(z);
             case 1: return bear(z);
             case 2: return ghost(z);
             case 3: return skeleton(z);
             case 4: return lizardfolk(z);
+            case 5: return fairy(z);
             default: return orc(z);
         }
     }
 
     public static function enemies(z:Int):Array<Creature> {
-        switch (Math.floor(Math.random() * 5)) {
+        switch (Math.floor(Math.random() * 7)) {
             case 0: 
                 var list = new Array<Creature>();
                 var count = Math.floor(2 + Math.random() * 5);
@@ -179,6 +189,15 @@ class Factory {
                 for (i in 0 ... count)
                     list.push(skeleton(z));
                 return list;
+
+            case 4:
+                var list = new Array<Creature>();
+                var count = Dice.roll("2d2+0");
+                for (i in 0 ... count)
+                    list.push(lizardfolk(z));
+                return list;
+
+            case 5: return [fairy(z)];
 
             default:
                 var list = new Array<Creature>();
@@ -606,7 +625,7 @@ class MagicMissilesAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.10,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -646,6 +665,30 @@ class MagicMissilesAbility extends Ability {
 class OrbOfPainAbility extends Ability {
     public function new() { super("orb of pain", "Cast a powerfull projectile with a bost to accuracy and damage."); }
 
+    override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        var here = new IntPoint(self.x, self.y);
+        var target = new IntPoint(self.world.player.x, self.world.player.y);
+        var dice = self.getDiceToUseForAbility();
+
+        if (dice == null || here.distanceTo(target) > 10)
+            return { percent: 0.0, func: function(self):Void { } };
+
+        var points = Bresenham.line(self.x, self.y, target.x, target.y).points;
+        points.shift();
+        for (p in points) {
+            var other = self.world.getCreature(p.x, p.y, self.z);
+            if (other != null && other.glyph != "@")
+                return { percent: 0.0, func: function(self):Void { } };
+        }
+
+        return { 
+            percent: 0.25,
+               func: function(self):Void {
+                    doIt(self, dice.number, dice.sides, target.x, target.y);
+               }
+        };
+    }
+
     override public function playerUsage(self:Creature):Void {
         self.world.enter(new SelectDiceScreen(self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
             self.world.enter(new AimScreen(self, 10, function(tx:Int, ty:Int):Void {
@@ -668,18 +711,39 @@ class OrbOfPainAbility extends Ability {
 class ExplosionAbility extends Ability {
     public function new() { super("explosion", "Cast a firey explosion that affects a wide area."); }
 
+    override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        var here = new IntPoint(self.x, self.y);
+        var target = new IntPoint(self.world.player.x, self.world.player.y);
+        var dice = self.getDiceToUseForAbility();
+
+        if (dice == null || here.distanceTo(target) > 20)
+            return { percent: 0.0, func: function(self):Void { } };
+
+        var roll = Dice.rollExact(dice.number, dice.sides, 0);
+
+        if (here.distanceTo(target) < roll)
+            return { percent: 0.0, func: function(self):Void { } };
+
+        return { 
+            percent: 0.25,
+               func: function(self):Void {
+                    doIt(self, dice.number, dice.sides, roll, target.x, target.y);
+               }
+        };
+    }
+
     override public function playerUsage(self:Creature):Void {
         self.world.enter(new SelectDiceScreen(self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
+            var radius = Dice.rollExact(number, sides, 0);
             self.world.enter(new AimScreen(self, 20, function(tx:Int, ty:Int):Void {
-                doIt(self, number, sides, tx, ty);
+                doIt(self, number, sides, radius, tx, ty);
             }));
         }));
     }
 
-    private function doIt(self:Creature, number:Int, sides:Int, tx:Int, ty:Int):Void {
+    private function doIt(self:Creature, number:Int, sides:Int, radius:Int, tx:Int, ty:Int):Void {
         self.useDice(number, sides);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to cast an explosion');
-        var radius = Dice.rollExact(number, sides, 0);
         for (ox in -radius ... radius+1)
         for (oy in -radius ... radius+1) {
             if (ox*ox+oy*oy > radius*radius || Math.random() < 0.1)
