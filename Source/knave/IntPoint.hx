@@ -9,8 +9,8 @@ class IntPoint {
         this.y = y;
     }
 
-    public function equals(x:Int, y:Int):Bool {
-        return this.x == x && this.y == y;
+    public function equals(x2:Int, y2:Int):Bool {
+        return this.x == x2 && this.y == y2;
     }
 
     public function plus(other:IntPoint):IntPoint {

@@ -282,11 +282,12 @@ class Creature {
 
     public function takeRangedAttack(projectile:Projectile):Void {
         reveal();
+        var other = projectile.owner;
         var accuracy = Dice.roll(projectile.accuracyStat);
         var evasion = Dice.roll(effectiveEvasionStat("ranged"));
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName ${quantify(evasion-accuracy)} evades ${projectile.owner.fullName}\'s ${projectile.name}'); //'
+            world.addMessage('$fullName ${quantify(evasion-accuracy)} evades ${other.fullName}\'s ${projectile.name}'); //'
             projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
@@ -299,18 +300,24 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('$fullName ${quantify(resistance-damage)} resists ${projectile.owner.fullName}\'s ${projectile.name}'); //'
+            world.addMessage('$fullName ${quantify(resistance-damage)} resists ${other.fullName}\'s ${projectile.name}'); //'
         else if (actualDamage >= hp)
-            world.addMessage('${projectile.owner.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage, killing ${getPronoun()}');
+            world.addMessage('${other.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage, killing ${getPronoun()}');
         else
-            world.addMessage('${projectile.owner.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage');
+            world.addMessage('${other.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage');
+        
+        if (armor != null)
+            armor.onHit(this, other);
+
+        if (other.rangedWeapon!= null)
+            other.rangedWeapon.onHit(other, this);
 
         takeDamage(actualDamage, projectile.owner);
 
-        var effects = projectile.owner.nextAttackEffects;
-        projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
+        var effects = other.nextAttackEffects;
+        other.nextAttackEffects = new Array<Creature -> Creature -> Void>();
         for (func in effects)
-            func(projectile.owner, this);
+            func(other, this);
     }
 
     public function addWound(wound:{ countdown:Int, stat:String, modifier:String }):Void {
@@ -393,6 +400,12 @@ class Creature {
             world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage, killing ${other.getPronoun()}');
         else
             world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage');
+
+        if (other.armor != null)
+            other.armor.onHit(other, this);
+
+        if (meleeWeapon != null)
+            meleeWeapon.onHit(this, other);
 
         other.takeDamage(actualDamage, this);
 

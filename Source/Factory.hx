@@ -138,14 +138,21 @@ class Factory {
     public static function fairy(z:Int):Creature {
         var c = new Creature("f", "fairy", 0, 0, 0);
         c.isSentient = true;
-        c.abilities.push(ability("magic missiles"));
-        c.abilities.push(ability("orb of pain"));
-        c.abilities.push(ability("explosion"));
-        return maybeBig(c, z);
+        if (Math.random() > z / 10.0)
+            c.abilities.push(ability("magic missiles"));
+        if (Math.random() > z / 15.0)
+            c.abilities.push(ability("explosion"));
+        if (Math.random() > z / 20.0)
+            c.abilities.push(ability("orb of pain"));
+        return c;
     }
 
     public static function lizardfolk(z:Int):Creature {
-        var c = new Creature("l", "lizardfolk", 0, 0, 0);
+        var c:Creature = null;
+        if (Math.random() < 0.5)
+            c = new Creature("l", "lizardman", 0, 0, 0, "m");
+        else
+            c = new Creature("l", "lizardwoman", 0, 0, 0, "f");
         c.pietyStat = "5d5+5";
         c.isSentient = true;
         c.abilities.push(ability("pious attack"));
@@ -274,8 +281,28 @@ class Factory {
     }
 
     public static function maybeBetter(item:Item):Item {
-        if (Math.random() < 0.25)
-            item = addStatBonusToItem(item);
+        var item2 = item;
+        if (Math.random() < 0.33)
+            item2 = addStatBonusToItem(item2);
+        if (Math.random() < 0.33)
+            item2 = addAbilityBonusToItem(item2);
+        if (item2.name.indexOf("holy") > -1 && item2.name.indexOf("unholy") > -1)
+            return item;
+        else
+            return item2;
+    }
+
+    public static function addAbilityBonusToItem(item:Item):Item {
+        var modifier = "";
+        switch (Math.floor(Math.random() * 6)) {
+            case 0: item.onHitAbility = new KnockBackAbility(); modifier = " of knock back";
+            case 1: item.onHitAbility = new DisarmingAttackAbility(); modifier = " of disarming";
+            case 2: item.onHitAbility = new WoundingAttackAbility(); modifier = " of wounding";
+            case 3: item.onHitAbility = new AccuracyBoostAbility(); modifier = " of accuracy combo";
+            case 4: item.onHitAbility = new DamageBoostAbility(); modifier = " of damage combo";
+            case 5: item.onHitAbility = new IntimidateAbility(); modifier = " of intimidation";
+        }
+        item.name += modifier;
         return item;
     }
 
@@ -414,6 +441,10 @@ class KnockBackAbility extends Ability {
         };
     }
 
+    override public function itemUsage(owner:Creature, other:Creature):Void {
+        apply(owner, other, 3, 3, Dice.rollExact(3, 3, 0));
+    }
+
     override public function playerUsage(self:Creature):Void {
         self.world.enter(new SelectDiceScreen(self, "What do you want to roll for knock back distance?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
@@ -425,17 +456,24 @@ class KnockBackAbility extends Ability {
         self.useDice(number, sides);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a knock back attack');
         self.nextAttackEffects.push(function (self:Creature, target:Creature){
-            var dx = target.x - self.x + Math.random() - 0.5;
-            var dy = target.y - self.y + Math.random() - 0.5;
-
-            dx *= amount;
-            dy *= amount;
-
-            target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
-            while (target.animatePath.length > 0 && (target.animatePath[0].equals(self.x, self.y) || target.animatePath[0].equals(target.x, target.y)))
-            while (target.animatePath.length > amount)
-                target.animatePath.pop();
+            apply(self, target, number, sides, amount);
         });
+    }
+
+    private function apply(self:Creature, target:Creature, number:Int, sides:Int, amount:Int):Void {
+        var dx = target.x - self.x + Math.random() - 0.5;
+        var dy = target.y - self.y + Math.random() - 0.5;
+
+        dx *= amount;
+        dy *= amount;
+
+        target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
+        
+        while (target.animatePath.length > 0 && (target.animatePath[0].equals(self.x, self.y) || target.animatePath[0].equals(target.x, target.y)))
+            target.animatePath.shift();
+        
+        while (target.animatePath.length > amount)
+            target.animatePath.pop();
     }
 }
 

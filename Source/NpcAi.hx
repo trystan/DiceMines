@@ -65,8 +65,10 @@ class NpcAi {
     }
 
     private function followPath():Void {
-        if (path == null || path.length == 0)
+        if (path == null || path.length == 0) {
+            target.wander();
             return;
+        }
         if (Math.random() < 0.1) {
             target.wander();
             path = null;

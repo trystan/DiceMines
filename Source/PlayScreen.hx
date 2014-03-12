@@ -226,10 +226,14 @@ class PlayScreen extends Screen {
         var fg = new Color(200, 200, 200).toInt();
         var bg = new Color(0, 0, 0).toInt();
         display.write(player.name + " " + player.hp + "/" + player.maxHp, x, y++, fg, bg);
-        display.write(' ' + (player.meleeWeapon == null ? "- no sword -" : player.meleeWeapon.name), x, y++, fg, bg);
-        display.write(' ' + (player.rangedWeapon == null ? "- no bow -" : player.rangedWeapon.name), x, y++, fg, bg);
-        display.write(' ' + (player.armor == null ? "- no armor -" : player.armor.name), x, y++, fg, bg);
+        var characterMelee = player.meleeWeapon == null ? "- no sword -" : player.meleeWeapon.name;
+        display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);
 
+        var characterRanged = player.rangedWeapon == null ? "-  no bow  -" : player.rangedWeapon.name;
+        display.write(characterRanged, display.widthInCharacters - characterRanged.length - 1, y++, fg, bg);
+
+        var characterArmor = player.armor == null ? "- no armor -" : player.armor.name;
+        display.write(characterArmor, display.widthInCharacters - characterArmor.length - 1, y++, fg, bg);
 
         x = 1;
         y = 1;

@@ -13,6 +13,8 @@ class Item {
     public var resistanceStat:String;
     public var pietyStat:String;
 
+    public var onHitAbility:Ability;
+
     public var type:String;
 
     public function new(glyph:String, color:Color, type:String, name:String) {
@@ -36,10 +38,17 @@ class Item {
         if (evasionStat != "0d0+0") parts.push("evasion " + evasionStat);
         if (resistanceStat != "0d0+0") parts.push("resistance " + resistanceStat);
         if (pietyStat != "0d0+0") parts.push("piety " + pietyStat);
+        if (onHitAbility != null) parts.push("chance of " + onHitAbility.name);
 
         if (parts.length == 0)
             return name;
         else
             return '$name (${parts.join(", ")})';
+    }
+
+    public function onHit(owner:Creature, other:Creature):Void {
+        if (onHitAbility == null)
+            return;
+        onHitAbility.itemUsage(owner, other);
     }
 }

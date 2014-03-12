@@ -9,9 +9,13 @@ class Ability {
         this.description = description;
     }
 
-    public function playerUsage(self:Creature):Void { }
+    public function playerUsage(self:Creature):Void {
+    }
 
     public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } { 
         return { percent: -10.0, func: function(self:Creature):Void { } };
+    }
+
+    public function itemUsage(owner:Creature, other:Creature):Void {
     }
 }
