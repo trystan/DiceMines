@@ -11,9 +11,9 @@ class AimScreen extends Screen {
     private var maxDistance:Int;
     private var isOk:Bool = true;
 
-    public function new(world:PlayScreen, player:Creature, maxDistance:Int, callbackFunction: Int -> Int -> Void) {
+    public function new(player:Creature, maxDistance:Int, callbackFunction: Int -> Int -> Void) {
         super();
-        this.world = world;
+        this.world = player.world;
         this.player = player;
         this.maxDistance = maxDistance;
         this.callbackFunction = callbackFunction;

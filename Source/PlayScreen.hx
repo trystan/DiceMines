@@ -113,7 +113,7 @@ class PlayScreen extends Screen {
             return;
 
         if (key == "f" && player.rangedWeapon != null)
-            enter(new AimScreen(this, player, 40, function(x:Int,y:Int):Void {
+            enter(new AimScreen(player, 40, function(x:Int,y:Int):Void {
                 player.rangedAttack(x, y);
                 updateAfterAnimating = true;
             }));
@@ -122,7 +122,7 @@ class PlayScreen extends Screen {
         else {
             for (ability in player.abilities) {
                 if (ability.name.charAt(0) == key) {
-                    ability.func(this, player);
+                    ability.playerUsage(player);
                     break;
                 }
             }

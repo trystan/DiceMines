@@ -28,9 +28,20 @@ class NpcAi {
             return;
 
         if (target.canSee(world.player)) {
-            if (target.fearCounter > 0)
+            if (target.fearCounter > 0) {
                 target.runFrom(world.player);
-            else if (target.rangedWeapon != null) {
+                return;
+            }
+
+            for (ability in target.abilities) {
+                var data = ability.aiUsage(target);
+                if (data == null || data.percent < Math.random())
+                    continue;
+                data.func(target);
+                return;
+            }
+
+            if (target.rangedWeapon != null) {
                 if (Math.random() < 0.5)
                     target.rangedAttack(world.player.x, world.player.y);
                 else

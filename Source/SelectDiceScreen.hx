@@ -11,9 +11,9 @@ class SelectDiceScreen extends Screen {
     private var sides:Int = 1;
     private var section:Int = 0;
 
-    public function new(world:PlayScreen, player:Creature, prompt:String, callbackFunction: Int -> Int -> Void) {
+    public function new(player:Creature, prompt:String, callbackFunction: Int -> Int -> Void) {
         super();
-        this.world = world;
+        this.world = player.world;
         this.player = player;
         this.prompt = prompt;
         this.callbackFunction = callbackFunction;

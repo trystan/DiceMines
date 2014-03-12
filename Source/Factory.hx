@@ -266,325 +266,430 @@ class Factory {
     public static var abilities:Array<Ability>;
 
     public static function init():Void {
-        abilities = [
-            new Ability("Jump", "Move several spaces at once.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll for jump distance?", function(number:Int, sides:Int):Void {
-                world.enter(new AimScreen(world, self, Dice.rollExact(number, sides, 0), function(tx:Int, ty:Int):Void {
-                    self.useDice(number, sides);
-                    self.animatePath = Bresenham.line(self.x, self.y, tx, ty).points;
-                    self.animatePath.shift();
-                    world.addMessage('${self.fullName} uses ${number}d$sides to jump');
-                }));
-            }));
-        }),
-        new Ability("Knockback", "A successfull hit sends your oppenent back.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll for knockback distance?", function(number:Int, sides:Int):Void {
-                var amount = Dice.rollExact(number, sides, 0);
-                self.useDice(number, sides);
-                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a knockback attack');
-                world.update();
-                self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                    var dx = target.x - self.x + Math.random() - 0.5;
-                    var dy = target.y - self.y + Math.random() - 0.5;
+        abilities = [ 
+            new JumpAbility(),
+            new KnockbackAbility(),
+            new DisarmingAttackAbility(),
+            new WoundingAttackAbility(),
+            new RapidAttackAbility(),
+            new SneakAbility(),
+            new AccuracyBoostAbility(),
+            new DamageBoostAbility(),
+            new MagicMissilesAbility(),
+            new OrbOfPainAbility(),
+            new ExplosionAbility(),
+            new IntimidateAbility(),
+            new SootheAbility(),
+            new TurnUndeadAbility(),
+            new HealingAuraAbility(),
+            new PiousAttackAbility(),
+            new PiousDefenceAbility(),
+            new SmiteAbility() ];
+    }
+}
 
-                    dx *= amount;
-                    dy *= amount;
+class JumpAbility extends Ability { 
+    public function new() { super("Jump", "Move several spaces at once."); }
 
-                    target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
-                    while (target.animatePath.length > amount)
-                        target.animatePath.pop();
-                });
-            }));
-        }),
-        new Ability("disarming attack", "A successfull hit makes your opponent drop their weapon or armor.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
-                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a disarming attack');
-                world.update();
-                var amount = number + "d" + sides;
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for jump distance?", function(number:Int, sides:Int):Void {
+            self.world.enter(new AimScreen(self, Dice.rollExact(number, sides, 0), function(tx:Int, ty:Int):Void {
                 self.useDice(number, sides);
-                self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                    if (Dice.roll(self.accuracyStat) + Dice.roll(amount) < Dice.roll(target.evasionStat)) {
-                        world.addMessage('${target.fullName} evades ${self.fullName}\'s disarming effect'); // '
-                        return;
-                    }
-                    if (target.meleeWeapon != null) {
-                        world.addItem(target.meleeWeapon, target.x, target.y, target.z);
-                        world.addMessage('the ${target.meleeWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
-                        target.meleeWeapon = null;
-                    } else if (target.rangedWeapon != null) {
-                        world.addItem(target.rangedWeapon, target.x, target.y, target.z);
-                        world.addMessage('the ${target.rangedWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
-                        target.rangedWeapon = null;
-                    } else if (target.armor != null) {
-                        world.addItem(target.armor, target.x, target.y, target.z);
-                        world.addMessage('the ${target.armor.name} is knocked off of ${target.fullName}\'s body'); // '
-                        target.armor = null;
-                    }
-                });
+                self.animatePath = Bresenham.line(self.x, self.y, tx, ty).points;
+                self.animatePath.shift();
+                self.world.addMessage('${self.fullName} uses ${number}d$sides to jump');
             }));
-        }),
-        new Ability("wounding attack", "A successfull hit drains a stat for several turns.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
-                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a wounding attack');
-                world.update();
-                self.useDice(number, sides);
-                self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                    var stats = ["accuracy", "evasion", "damage", "resistance"];
-                    var modifiers = ["-1d0+0", "-2d0+0", "-0d1+0", "-0d2+0", "-1d1+0", "-2d2+0"];
+        }));
+    }
+}
+class KnockbackAbility extends Ability {
+    public function new() { super("Knockback", "A successfull hit sends your oppenent back."); }
 
-                    var wound = { countdown: Dice.rollExact(number, sides, 0), stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
-                    switch (wound.stat) {
-                        case "accuracy": target.accuracyStat = Dice.add(target.accuracyStat, wound.modifier);
-                        case "evasion": target.evasionStat = Dice.add(target.evasionStat, wound.modifier);
-                        case "damage": target.damageStat = Dice.add(target.damageStat, wound.modifier);
-                        case "resistance": target.resistanceStat = Dice.add(target.resistanceStat, wound.modifier);
-                    }
-                    world.addMessage('${self.fullName} wounds ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
-                    target.wounds.push(wound);
-                });
-            }));
-        }),
-        new Ability("rapid attack", "A successfull hit causes several free melee attacks on adjacent creatures.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                world.addMessage('${self.fullName} uses ${number}d$sides to prepare a rapid attack');
-                world.update();
-                self.nextAttackEffects.push(function (self:Creature, target:Creature):Void {
-                    var attacks = Dice.rollExact(number, sides, 0);
-                    for (i in 0 ... attacks) {
-                        var candidates = new Array<Creature>();
-                        for (offsets in [[-1,-1], [-1,0], [-1,1], [0,-1], [0,1], [1,-1], [1,0], [1,1]]) {
-                            var other = self.world.getCreature(self.x + offsets[0], self.y + offsets[1], self.z);
-                            if (other != null && other.isAlive)
-                                candidates.push(other);
-                        }
-                        if (candidates.length == 0)
-                            break;
-                        self.attack(candidates[Math.floor(Math.random() * candidates.length)]);
-                    }
-                });
-            }));
-        }),
-        new Ability("sneak", "Become invisible for several turns.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
-                self.invisibleCounter = Dice.rollExact(number, sides, 0);
-                self.useDice(number, sides);
-                world.addMessage('${self.fullName} uses ${number}d$sides to sneaks away');
-                world.update();
-            }));
-        }),
-        new Ability("accuracy boost", "Add a positive modifier to your accuracy for the next attack.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
-                var amount = number + "d" + sides + "+0";
-                self.useDice(number, sides);
-                world.addMessage('${self.fullName} uses ${number}d$sides to boost accuracy');
-                world.update();
-                self.accuracyStat = Dice.add(self.accuracyStat, amount);
-                self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                    self.accuracyStat = Dice.subtract(self.accuracyStat, amount);
-                });
-            }));
-        }), 
-        new Ability("damage boost", "Add a positive modifier to your damage for the next attack.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
-                var amount = number + "d" + sides + "+0";
-                self.useDice(number, sides);
-                world.addMessage('${self.fullName} uses ${number}d$sides to boost damage');
-                world.update();
-                self.damageStat = Dice.add(self.damageStat, amount);
-                self.nextAttackEffects.push(function (self:Creature, target:Creature){
-                    self.damageStat = Dice.subtract(self.damageStat, amount);
-                });
-            }));
-        }),
-        new Ability("magic missiles", "Cast several magical attacks at random enemies.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                var count = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to cast $count magic missiles');
-                for (i in 0 ... count) {
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for knockback distance?", function(number:Int, sides:Int):Void {
+            var amount = Dice.rollExact(number, sides, 0);
+            self.useDice(number, sides);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a knockback attack');
+            self.world.update();
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                var dx = target.x - self.x + Math.random() - 0.5;
+                var dy = target.y - self.y + Math.random() - 0.5;
+
+                dx *= amount;
+                dy *= amount;
+
+                target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
+                while (target.animatePath.length > amount)
+                target.animatePath.pop();
+            });
+        }));
+    }
+}
+
+class DisarmingAttackAbility extends Ability {
+    public function new() { super("disarming attack", "A successfull hit makes your opponent drop their weapon or armor."); } 
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a disarming attack');
+            self.world.update();
+            var amount = number + "d" + sides;
+            self.useDice(number, sides);
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                if (Dice.roll(self.accuracyStat) + Dice.roll(amount) < Dice.roll(target.evasionStat)) {
+                    self.world.addMessage('${target.fullName} evades ${self.fullName}\'s disarming effect'); // '
+                    return;
+                }
+                if (target.meleeWeapon != null) {
+                    self.world.addItem(target.meleeWeapon, target.x, target.y, target.z);
+                    self.world.addMessage('the ${target.meleeWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+                    target.meleeWeapon = null;
+                } else if (target.rangedWeapon != null) {
+                    self.world.addItem(target.rangedWeapon, target.x, target.y, target.z);
+                    self.world.addMessage('the ${target.rangedWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+                    target.rangedWeapon = null;
+                } else if (target.armor != null) {
+                    self.world.addItem(target.armor, target.x, target.y, target.z);
+                    self.world.addMessage('the ${target.armor.name} is knocked off of ${target.fullName}\'s body'); // '
+                    target.armor = null;
+                }
+            });
+        }));
+    }
+}
+
+class WoundingAttackAbility extends Ability { 
+    public function new() { super("wounding attack", "A successfull hit drains a stat for several turns."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a wounding attack');
+            self.world.update();
+            self.useDice(number, sides);
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                var stats = ["accuracy", "evasion", "damage", "resistance"];
+                var modifiers = ["-1d0+0", "-2d0+0", "-0d1+0", "-0d2+0", "-1d1+0", "-2d2+0"];
+
+                var wound = { countdown: Dice.rollExact(number, sides, 0), stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
+                switch (wound.stat) {
+                    case "accuracy": target.accuracyStat = Dice.add(target.accuracyStat, wound.modifier);
+                    case "evasion": target.evasionStat = Dice.add(target.evasionStat, wound.modifier);
+                    case "damage": target.damageStat = Dice.add(target.damageStat, wound.modifier);
+                    case "resistance": target.resistanceStat = Dice.add(target.resistanceStat, wound.modifier);
+                }
+                self.world.addMessage('${self.fullName} wounds ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
+                target.wounds.push(wound);
+            });
+        }));
+    }
+}
+
+class RapidAttackAbility extends Ability {
+    public function new() { super("rapid attack", "A successfull hit causes several free melee attacks on adjacent creatures."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a rapid attack');
+            self.world.update();
+            self.nextAttackEffects.push(function (self:Creature, target:Creature):Void {
+                var attacks = Dice.rollExact(number, sides, 0);
+                for (i in 0 ... attacks) {
                     var candidates = new Array<Creature>();
-                    for (c in world.creatures) {
-                        if (self.canSee(c) && self.glyph != c.glyph)
-                            candidates.push(c);
+                    for (offsets in [[-1,-1], [-1,0], [-1,1], [0,-1], [0,1], [1,-1], [1,0], [1,1]]) {
+                        var other = self.world.getCreature(self.x + offsets[0], self.y + offsets[1], self.z);
+                        if (other != null && other.isAlive)
+                candidates.push(other);
                     }
                     if (candidates.length == 0)
-                        break;
-                    else {
-                        var target = candidates[Math.floor(Math.random() * candidates.length)];
-                        var p = new Projectile(self.x, self.y, self.z, target.x, target.y, self, "magic missile", "*", Color.hsv(180, 90, 90));
-                        p.accuracyStat = self.accuracyStat;
-                        p.damageStat = self.damageStat;
-                        self.world.addProjectile(p);
-                    }
+                break;
+            self.attack(candidates[Math.floor(Math.random() * candidates.length)]);
                 }
-                world.update();
-            }));
-        }),
-        new Ability("orb of pain", "Cast a powerfull projectile with a bost to accuracy and damage.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
-                world.enter(new AimScreen(world, self, 10, function(tx:Int, ty:Int):Void {
-                    self.useDice(number, sides);
-                    var bonus = number + "d" + sides + "+0";
-                    world.addMessage('${self.fullName} uses ${number}d$sides to cast an orb of pain');
-                    var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "*", "orb of pain", Color.hsv(300, 90, 90));
-                    p.accuracyStat = Dice.add(self.accuracyStat, bonus);
-                    p.damageStat = Dice.add(self.damageStat, bonus);
+            });
+        }));
+    }
+}
+
+class SneakAbility extends Ability {
+    public function new() { super("sneak", "Become invisible for several turns."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
+            self.invisibleCounter = Dice.rollExact(number, sides, 0);
+            self.useDice(number, sides);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to sneaks away');
+            self.world.update();
+        }));
+    }
+}
+
+class AccuracyBoostAbility extends Ability {
+    public function new() { super("accuracy boost", "Add a positive modifier to your accuracy for the next attack."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
+            var amount = number + "d" + sides + "+0";
+            self.useDice(number, sides);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to boost accuracy');
+            self.world.update();
+            self.accuracyStat = Dice.add(self.accuracyStat, amount);
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.accuracyStat = Dice.subtract(self.accuracyStat, amount);
+            });
+        }));
+    }
+}
+
+class DamageBoostAbility extends Ability {
+    public function new() { super("damage boost", "Add a positive modifier to your damage for the next attack."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
+            var amount = number + "d" + sides + "+0";
+            self.useDice(number, sides);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to boost damage');
+            self.world.update();
+            self.damageStat = Dice.add(self.damageStat, amount);
+            self.nextAttackEffects.push(function (self:Creature, target:Creature){
+                self.damageStat = Dice.subtract(self.damageStat, amount);
+            });
+        }));
+    }
+}
+
+class MagicMissilesAbility extends Ability {
+    public function new() { super("magic missiles", "Cast several magical attacks at random enemies."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            var count = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to cast $count magic missiles');
+            for (i in 0 ... count) {
+                var candidates = new Array<Creature>();
+                for (c in self.world.creatures) {
+                    if (self.canSee(c) && self.glyph != c.glyph)
+                        candidates.push(c);
+                }
+                if (candidates.length == 0) {
+                    break;
+                } else {
+                    var target = candidates[Math.floor(Math.random() * candidates.length)];
+                    var p = new Projectile(self.x, self.y, self.z, target.x, target.y, self, "magic missile", "*", Color.hsv(180, 90, 90));
+                    p.accuracyStat = self.accuracyStat;
+                    p.damageStat = self.damageStat;
                     self.world.addProjectile(p);
-                }));
-            }));
-        }),
-        new Ability("explosion", "Cast a firey explosion that affects a wide area.", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
-                world.enter(new AimScreen(world, self, 20, function(tx:Int, ty:Int):Void {
-                    self.useDice(number, sides);
-                    world.addMessage('${self.fullName} uses ${number}d$sides to cast an explosion');
-                    var radius = Dice.rollExact(number, sides, 0);
-                    for (ox in -radius ... radius+1)
-                    for (oy in -radius ... radius+1) {
-                        if (ox*ox+oy*oy > radius*radius || Math.random() < 0.1)
-                            continue;
-                        self.world.addFire(tx+ox, ty+oy, self.z);
-                    }
-                }));
-            }));
-        }),
-        new Ability("intimidate", "Freighten all orcs and lizardfolk you see", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to intimidate orcs and lizardfolk for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        for (c in world.creatures) {
-                            if (c.isSentient && self.canSee(c))
-                                c.fearCounter += 2;
-                        }
-                    }
-                });
-            }));
-        }),
-        new Ability("soothe", "Put to sleep all arachnids and bears you see", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to sooth arachnids and bears for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        for (c in world.creatures) {
-                            if (c.isAnimal && self.canSee(c))
-                                c.sleepCounter += 2;
-                        }
-                    }
-                });
-            }));
-        }),
-        new Ability("turn undead", "Damage all visible ghosts and skeletons", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to damage ghosts and skeletons for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        for (c in world.creatures) {
-                            if (c.isUndead && self.canSee(c))
-                                c.takeDamage(Dice.roll(self.pietyStat), self);
-                        }
-                    }
-                });
-            }));
-        }),
-        new Ability("healing aura", "Allies are heald by their piety", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to heal allies for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        for (c in world.creatures) {
-                            if (c.glyph == self.glyph)
-                                c.heal(Dice.roll(c.pietyStat));
-                        }
-                    }
-                });
-            }));
-        }),
-        new Ability("pious attack", "Buff allies accuracy and damage by their piety", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                for (c in world.creatures) {
-                    if (c.glyph == self.glyph) {
-                        c.accuracyStat = Dice.add(c.accuracyStat, c.pietyStat);
-                        c.damageStat = Dice.add(c.damageStat, c.pietyStat);
-                    }
                 }
+            }
+            self.world.update();
+        }));
+    }
+}
+
+class OrbOfPainAbility extends Ability {
+    public function new() { super("orb of pain", "Cast a powerfull projectile with a bost to accuracy and damage."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
+            self.world.enter(new AimScreen(self, 10, function(tx:Int, ty:Int):Void {
                 self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to buff the attack of allies for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        if (turn > 0)
-                            return;
-                        for (c in world.creatures) {
-                            if (c.glyph == self.glyph) {
-                                c.accuracyStat = Dice.subtract(c.accuracyStat, c.pietyStat);
-                                c.damageStat = Dice.subtract(c.damageStat, c.pietyStat);
-                            }
-                        }
-                    }
-                });
+                var bonus = number + "d" + sides + "+0";
+                self.world.addMessage('${self.fullName} uses ${number}d$sides to cast an orb of pain');
+                var p = new Projectile(self.x, self.y, self.z, tx, ty, self, "orb of pain", "*", Color.hsv(300, 90, 90));
+                p.accuracyStat = Dice.add(self.accuracyStat, bonus);
+                p.damageStat = Dice.add(self.damageStat, bonus);
+                self.world.addProjectile(p);
             }));
-        }),
-        new Ability("pious defence", "Buff allies evasion and resistance by their piety", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
-                for (c in world.creatures) {
-                    if (c.glyph == self.glyph) {
-                        c.evasionStat = Dice.add(c.evasionStat, c.pietyStat);
-                        c.resistanceStat = Dice.add(c.resistanceStat, c.pietyStat);
-                    }
-                }
+        }));
+    }
+}
+
+class ExplosionAbility extends Ability {
+    public function new() { super("explosion", "Cast a firey explosion that affects a wide area."); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
+            self.world.enter(new AimScreen(self, 20, function(tx:Int, ty:Int):Void {
                 self.useDice(number, sides);
-                var duration = Dice.rollExact(number, sides, 0);
-                world.addMessage('${self.fullName} uses ${number}d$sides to buff the defences of allies for $duration turns');
-                world.effects.push({
-                    countdown: duration,
-                    func: function(turn:Int):Void {
-                        if (turn > 0)
-                            return;
-                        for (c in world.creatures) {
-                            if (c.glyph == self.glyph) {
-                                c.evasionStat = Dice.subtract(c.evasionStat, c.pietyStat);
-                                c.resistanceStat = Dice.subtract(c.resistanceStat, c.pietyStat);
-                            }
-                        }
-                    }
-                });
-            }));
-        }),
-        new Ability("smite", "Damage another based on the difference in piety", function(world:PlayScreen, self:Creature):Void {
-            world.enter(new SelectDiceScreen(world, self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
+                self.world.addMessage('${self.fullName} uses ${number}d$sides to cast an explosion');
                 var radius = Dice.rollExact(number, sides, 0);
-                world.enter(new AimScreen(world, self, radius, function(tx:Int, ty:Int):Void {
-                    self.useDice(number, sides);
-                    var other = world.getCreature(tx, ty, self.z);
-                    if (other == null) {
-                        world.addMessage('${self.fullName} uses ${number}d$sides to smite nothing in particular');
-                    } else {
-                        var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
-                        if (diff > 0) {
-                            diff *= 2;
-                            world.addMessage('${self.fullName} uses ${number}d$sides to smite ${other.fullName} for ${diff} damage');
-                            other.takeDamage(diff, self);
-                        } else
-                            world.addMessage('${self.fullName} uses ${number}d$sides to fail to smite ${other.fullName} by ${diff}');
-                    }
-                }));
+                for (ox in -radius ... radius+1)
+                for (oy in -radius ... radius+1) {
+                    if (ox*ox+oy*oy > radius*radius || Math.random() < 0.1)
+                continue;
+            self.world.addFire(tx+ox, ty+oy, self.z);
+                }
             }));
-        }),
-        ];
+        }));
+    }
+}
+class IntimidateAbility extends Ability {
+    public function new() { super("intimidate", "Freighten all orcs and lizardfolk you see"); } 
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to intimidate orcs and lizardfolk for $duration turns');
+            self.world.effects.push({
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    for (c in self.world.creatures) {
+                        if (c.isSentient && self.canSee(c))
+                c.fearCounter += 2;
+                    }
+                }
+            });
+        }));
+    }
+}
+
+class SootheAbility extends Ability {
+    public function new() { super("soothe", "Put to sleep all arachnids and bears you see"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to sooth arachnids and bears for $duration turns');
+            self.world.effects.push({
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    for (c in self.world.creatures) {
+                        if (c.isAnimal && self.canSee(c))
+                c.sleepCounter += 2;
+                    }
+                }
+            });
+        }));
+    }
+}
+
+class TurnUndeadAbility extends Ability {
+    public function new() { super("turn undead", "Damage all visible ghosts and skeletons"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to damage ghosts and skeletons for $duration turns');
+            self.world.effects.push({
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    for (c in self.world.creatures) {
+                        if (c.isUndead && self.canSee(c))
+                c.takeDamage(Dice.roll(self.pietyStat), self);
+                    }
+                }
+            });
+        }));
+    }
+}
+
+class HealingAuraAbility extends Ability {
+    public function new() { super("healing aura", "Allies are heald by their piety"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to heal allies for $duration turns');
+            self.world.effects.push({
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    for (c in self.world.creatures) {
+                        if (c.glyph == self.glyph)
+                c.heal(Dice.roll(c.pietyStat));
+                    }
+                }
+            });
+        }));
+    }
+}
+
+class PiousAttackAbility extends Ability {
+    public function new() { super("pious attack", "Buff allies accuracy and damage by their piety"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            for (c in self.world.creatures) {
+                if (c.glyph == self.glyph) {
+                    c.accuracyStat = Dice.add(c.accuracyStat, c.pietyStat);
+                    c.damageStat = Dice.add(c.damageStat, c.pietyStat);
+                }
+            }
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to buff the attack of allies for $duration turns');
+            self.world.effects.push({
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    if (turn > 0)
+                return;
+            for (c in self.world.creatures) {
+                if (c.glyph == self.glyph) {
+                    c.accuracyStat = Dice.subtract(c.accuracyStat, c.pietyStat);
+                    c.damageStat = Dice.subtract(c.damageStat, c.pietyStat);
+                }
+            }
+                }
+            });
+        }));
+    }
+}
+
+class PiousDefenceAbility extends Ability {
+    public function new() { super("pious defence", "Buff allies evasion and resistance by their piety"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+            for (c in self.world.creatures) {
+                if (c.glyph == self.glyph) {
+                    c.evasionStat = Dice.add(c.evasionStat, c.pietyStat);
+                    c.resistanceStat = Dice.add(c.resistanceStat, c.pietyStat);
+                }
+            }
+            self.useDice(number, sides);
+            var duration = Dice.rollExact(number, sides, 0);
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to buff the defences of allies for $duration turns');
+            self.world.effects.push({ 
+                countdown: duration,
+                func: function(turn:Int):Void {
+                    if (turn > 0)
+                return;
+            for (c in self.world.creatures) {
+                if (c.glyph == self.glyph) {
+                    c.evasionStat = Dice.subtract(c.evasionStat, c.pietyStat);
+                    c.resistanceStat = Dice.subtract(c.resistanceStat, c.pietyStat);
+                }
+            }
+                }
+            });
+        }));
+    }
+}
+
+class SmiteAbility extends Ability {
+    public function new() { super("smite", "Damage another based on the difference in piety"); }
+
+    override public function playerUsage(self:Creature):Void {
+        self.world.enter(new SelectDiceScreen(self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
+            var radius = Dice.rollExact(number, sides, 0);
+            self.world.enter(new AimScreen(self, radius, function(tx:Int, ty:Int):Void {
+                self.useDice(number, sides);
+                var other = self.world.getCreature(tx, ty, self.z);
+                if (other == null) {
+                    self.world.addMessage('${self.fullName} uses ${number}d$sides to smite nothing in particular');
+                } else {
+                    var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
+                    if (diff > 0) {
+                        self.world.addMessage('${self.fullName} uses ${number}d$sides to smite ${other.fullName} for ${diff} damage');
+                        other.takeDamage(diff, self);
+                    } else {
+                        self.world.addMessage('${self.fullName} uses ${number}d$sides to fail to smite ${other.fullName} by ${diff}');
+                    }
+                }
+            }));
+        }));
     }
 }

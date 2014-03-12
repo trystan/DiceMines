@@ -117,20 +117,17 @@ class Creature {
     public function runFrom(other:Creature):Void {
         var here = new IntPoint(x, y);
         var there = new IntPoint(other.x, other.y);
-
         var dist = here.distanceTo(there);
-
         var candidates = new Array<IntPoint>();
 
         for (candidate in here.neighbors8()) {
-            var dist2 = candidate.distanceTo(there);
-            if (dist2 < dist && Math.random() < 0.9)
+            if (world.blocksMovement(candidate.x, candidate.y, z))
+                continue;
+
+            if (candidate.distanceTo(there) < dist && Math.random() < 0.9)
                 continue;
 
             if (world.isEmptySpace(candidate.x, candidate.y, z) && Math.random() < 0.80)
-                continue;
-
-            if (world.blocksMovement(candidate.x, candidate.y, z))
                 continue;
 
             candidates.push(candidate);
@@ -305,12 +302,14 @@ class Creature {
 
     public function takeDamage(amount:Int, attacker:Creature):Void {
         reveal();
+        sleepCounter = 0;
         hp -= amount;
 
         if (hp < 1) {
             isAlive = false;
             if (attacker != null)
                 attacker.gainDice(3);
+
             if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
                 for (c in world.creatures) {
                     if (c.canSee(this) && c.glyph != "@")
