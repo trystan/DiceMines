@@ -6,7 +6,7 @@ import knave.Bresenham;
 import knave.Shadowcaster;
 
 class Creature {
-    public var world:PlayScreen;
+    public var world:World;
     public var x:Int;
     public var y:Int;
     public var z:Int;
@@ -375,6 +375,12 @@ class Creature {
             die(attacker);
     }
 
+    private function dropItem(item:Item, ix:Int, iy:Int, iz:Int):Void {
+        while (world.isEmptySpace(ix, iy, iz))
+            iz++;
+        world.addItem(item, ix, iy, iz);
+    }
+
     private function die(attacker:Creature):Void {
         isAlive = false;
 
@@ -389,37 +395,25 @@ class Creature {
                 continue;
             var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
             adjacentSpots.remove(p);
-            var iz = z;
-            while (world.isEmptySpace(p.x, p.y, iz))
-                iz++;
-            world.addItem(Factory.dice(i+1), p.x, p.y, iz);
+            dropItem(Factory.dice(i+1), p.x, p.y, z);
         }
 
         if (meleeWeapon != null && adjacentSpots.length > 0) {
             var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
             adjacentSpots.remove(p);
-            var iz = z;
-            while (world.isEmptySpace(p.x, p.y, iz))
-                iz++;
-            world.addItem(meleeWeapon, p.x, p.y, iz);
+            dropItem(meleeWeapon, p.x, p.y, z);
         }
 
         if (rangedWeapon != null && adjacentSpots.length > 0) {
             var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
             adjacentSpots.remove(p);
-            var iz = z;
-            while (world.isEmptySpace(p.x, p.y, iz))
-                iz++;
-            world.addItem(rangedWeapon, p.x, p.y, iz);
+            dropItem(rangedWeapon, p.x, p.y, z);
         }
 
         if (armor != null && adjacentSpots.length > 0) {
             var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
             adjacentSpots.remove(p);
-            var iz = z;
-            while (world.isEmptySpace(p.x, p.y, iz))
-                iz++;
-            world.addItem(armor, p.x, p.y, iz);
+            dropItem(armor, p.x, p.y, z);
         }
 
         if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {

@@ -25,7 +25,7 @@ class Main extends Sprite {
             .useFont(AsciiDisplay.codePage437_12x12, 12, 12)
             .useHJKLYUBN()
             .useNumpad()
-            .withScreen(new PlayScreen())
+            .withScreen(new WorldGenScreen())
             .addToSprite(this);
     }
 }

@@ -3,7 +3,6 @@ package;
 import knave.*;
 
 class SelectDiceScreen extends Screen {
-    private var world:PlayScreen;
     private var player:Creature;
     private var prompt:String;
     private var callbackFunction:Int -> Int -> Void;
@@ -13,7 +12,6 @@ class SelectDiceScreen extends Screen {
 
     public function new(player:Creature, prompt:String, callbackFunction: Int -> Int -> Void) {
         super();
-        this.world = player.world;
         this.player = player;
         this.prompt = prompt;
         this.callbackFunction = callbackFunction;
@@ -50,8 +48,6 @@ class SelectDiceScreen extends Screen {
     }
     
     private function draw(display:AsciiDisplay):Void {
-        world.draw(display);
-
         var fg = new Color(200, 200, 200).toInt();
         var hilight = new Color(250, 250, 150).toInt();
         var bg = new Color(4, 4, 8).toInt();

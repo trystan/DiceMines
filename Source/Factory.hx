@@ -122,7 +122,7 @@ class Factory {
         c.damageStat = "5d5+5";
         c.isAnimal = true;
         c.abilities.push(ability("wounding attack"));
-        c.sleepCounter = 60 + z * 20 + Dice.roll("1d20");
+        c.sleepCounter = 60 + z * 20 + Dice.roll("1d20+0");
         return maybeBig(c, z);
     }
 
@@ -434,9 +434,9 @@ class JumpAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for jump distance?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll for jump distance?", function(number:Int, sides:Int):Void {
             var roll = Dice.rollExact(number, sides, 0);
-            self.world.enter(new AimScreen(self, roll, function(tx:Int, ty:Int):Void {
+            self.world.playScreen.enter(new AimScreen(self, roll, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, roll, tx, ty);
             }));
         }));
@@ -468,7 +468,7 @@ class KnockBackAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for knock back distance?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll for knock back distance?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -517,7 +517,7 @@ class DisarmingAttackAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll? Your roll vs opposing evasion to disarm.", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -570,7 +570,7 @@ class WoundingAttackAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll for duration of the wound?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -613,7 +613,7 @@ class RapidAttackAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll for extra melee attacks?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -652,7 +652,7 @@ class SneakAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to roll for duration of sneaking?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -678,7 +678,7 @@ class AccuracyBoostAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to add to your accuracy?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -708,7 +708,7 @@ class DamageBoostAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to add to your damage?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -738,7 +738,7 @@ class MagicMissilesAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "How many missiles do you want to cast?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -794,8 +794,8 @@ class OrbOfPainAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
-            self.world.enter(new AimScreen(self, 10, function(tx:Int, ty:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want to add to accuracy and damage?", function(number:Int, sides:Int):Void {
+            self.world.playScreen.enter(new AimScreen(self, 10, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, tx, ty);
             }));
         }));
@@ -837,9 +837,9 @@ class ExplosionAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
             var radius = Dice.rollExact(number, sides, 0);
-            self.world.enter(new AimScreen(self, 20, function(tx:Int, ty:Int):Void {
+            self.world.playScreen.enter(new AimScreen(self, 20, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, radius, tx, ty);
             }));
         }));
@@ -875,7 +875,7 @@ class IntimidateAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -910,7 +910,7 @@ class SootheAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -941,7 +941,7 @@ class TurnUndeadAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -983,7 +983,7 @@ class HealingAuraAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -1023,7 +1023,7 @@ class PiousAttackAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -1068,7 +1068,7 @@ class PiousDefenceAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "What do you want the duration to be?", function(number:Int, sides:Int):Void {
             doIt(self, number, sides);
         }));
     }
@@ -1108,9 +1108,9 @@ class SmiteAbility extends Ability {
     }
 
     override public function playerUsage(self:Creature):Void {
-        self.world.enter(new SelectDiceScreen(self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
+        self.world.playScreen.enter(new SelectDiceScreen(self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
             var radius = Dice.rollExact(number, sides, 0);
-            self.world.enter(new AimScreen(self, radius, function(tx:Int, ty:Int):Void {
+            self.world.playScreen.enter(new AimScreen(self, radius, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, tx, ty);
             }));
         }));

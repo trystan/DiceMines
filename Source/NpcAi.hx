@@ -4,7 +4,7 @@ import knave.IntPoint;
 import knave.AStar;
 
 class NpcAi {
-    public var world:PlayScreen;
+    public var world:World;
     public var target:Creature;
     public var path:Array<IntPoint>;
 

@@ -3,7 +3,7 @@ package;
 import knave.*;
 
 class AimScreen extends Screen {
-    private var world:PlayScreen;
+    private var world:World;
     private var player:Creature;
     private var callbackFunction:Int -> Int -> Void;
     private var targetX:Int;
@@ -49,7 +49,7 @@ class AimScreen extends Screen {
     }
     
     private function draw(display:AsciiDisplay):Void {
-        world.draw(display);
+        world.playScreen.draw(display);
 
         var fg = new Color(250, 250, 250).toInt();
         var glyph = String.fromCharCode(250);
@@ -61,8 +61,8 @@ class AimScreen extends Screen {
         if (!isOk)
             fg = new Color(200, 0, 0).toInt();
 
-        var vx = world.viewLeft;
-        var vy = world.viewTop;
+        var vx = world.playScreen.viewLeft;
+        var vy = world.playScreen.viewTop;
         for (p in points)
             display.write(glyph, p.x - vx, p.y - vy, fg);
 

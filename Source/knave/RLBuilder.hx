@@ -54,7 +54,6 @@ class RLBuilder {
 
     public function withScreen(startingScreen:Screen):RLBuilder {
         rl.enter(startingScreen);
-        rl.trigger("redraw");
         return this;
     }
 
