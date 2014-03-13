@@ -384,7 +384,7 @@ class WorldGenScreen extends Screen {
 
 
     private function addStairs():Void {
-        for (z in 0 ... world.heights.depth-1) {
+        for (z in 0 ... world.heights.depth) {
             var count = 0;
             while (count < 20) {
                 var x = Math.floor(Math.random() * world.heights.width);
@@ -393,12 +393,12 @@ class WorldGenScreen extends Screen {
                 if (world.tiles.get(x, y, z) != world.tile_floor)
                     continue;
 
-                if (world.tiles.get(x, y, z+1) != world.tile_floor)
+                if (z != 0 && world.tiles.get(x, y, z-1) != world.tile_floor)
                     continue;
 
                 count++;
-                world.tiles.set(x, y, z, world.tile_stairs_down);
-                world.tiles.set(x, y, z+1, world.tile_stairs_up);
+                world.tiles.set(x, y, z, world.tile_stairs_up);
+                world.tiles.set(x, y, z+1, world.tile_stairs_down);
             }
         }
     }

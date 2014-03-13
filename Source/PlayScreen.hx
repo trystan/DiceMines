@@ -39,7 +39,11 @@ class PlayScreen extends Screen {
             return;
 
         player.move(by.x, by.y, by.z);
-        update();
+
+        if (player.z < 0)
+            switchTo(new EndScreen(this));
+        else
+            update();
     }
 
     public function update():Void {
