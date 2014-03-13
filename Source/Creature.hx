@@ -110,7 +110,7 @@ class Creature {
         resistanceStat = "3d3+0";
         pietyStat = "2d2+0";
 
-        gainDice(5);
+        gainDice(Dice.roll("1d8+1"));
     }
 
     public function getPronoun():String {
@@ -137,7 +137,7 @@ class Creature {
     }
 
     public function canSee(other:Creature):Bool {
-        if (other.z != z)
+        if (sleepCounter > 0 || other.z != z)
             return false;
 
         if (light == null) {
@@ -168,10 +168,13 @@ class Creature {
             if (world.blocksMovement(candidate.x, candidate.y, z))
                 continue;
 
-            if (candidate.distanceTo(there) < dist && Math.random() < 0.9)
+            if (candidate.distanceTo(there) < dist && Math.random() < 0.90)
                 continue;
 
             if (world.isEmptySpace(candidate.x, candidate.y, z) && Math.random() < 0.80)
+                continue;
+
+            if (world.isLava(candidate.x, candidate.y, z) && Math.random() < 0.90)
                 continue;
 
             candidates.push(candidate);
@@ -191,7 +194,7 @@ class Creature {
         var mx = Math.floor(Math.random() * 3) - 1;
         var my = Math.floor(Math.random() * 3) - 1;
 
-        if (world.isEmptySpace(x+mx, y+my, z))
+        if (world.isEmptySpace(x+mx, y+my, z) || world.isLava(x+mx, y+my, z))
             return;
         
         move(mx, my, 0);
@@ -202,7 +205,10 @@ class Creature {
         if (item == null) {
             world.addMessage('$name grabs at the ground');
         } else {
-            if (item.type == "ranged") {
+            if (item.type == "dice") {
+                var sides = Std.parseInt(item.name.substr(1));
+                dice[sides-1]++;
+            } else if (item.type == "ranged") {
                 if (rangedWeapon != null)
                     world.addItem(rangedWeapon, x, y, z);
                 rangedWeapon = item;
@@ -352,11 +358,21 @@ class Creature {
         reveal();
         sleepCounter = 0;
         hp -= amount;
+        checkHealth(attacker);
+    }
 
+    public function heal(amount:Int):Void {
+        reveal();
+        sleepCounter = 0;
+        hp += amount;
+        checkHealth(null);
+    }
+
+    private function checkHealth(attacker:Creature):Void {
+        if (hp > maxHp)
+            hp = maxHp;
         if (hp < 1) {
             isAlive = false;
-            if (attacker != null)
-                attacker.gainDice(3);
 
             if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
                 for (c in world.creatures) {
@@ -365,10 +381,6 @@ class Creature {
                 }
             }
         }
-    }
-
-    public function heal(amount:Int):Void {
-        hp = Math.floor(Math.min(hp + amount, maxHp));
     }
 
     public function attack(other:Creature):Void {

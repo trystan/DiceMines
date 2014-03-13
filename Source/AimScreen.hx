@@ -61,10 +61,12 @@ class AimScreen extends Screen {
         if (!isOk)
             fg = new Color(200, 0, 0).toInt();
 
+        var vx = world.viewLeft;
+        var vy = world.viewTop;
         for (p in points)
-            display.write(glyph, p.x, p.y, fg);
+            display.write(glyph, p.x - vx, p.y - vy, fg);
 
-        display.write("x", targetX, targetY, fg);
+        display.write("x", targetX - vx, targetY - vy, fg);
         display.update();
     }
 }

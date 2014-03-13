@@ -47,8 +47,8 @@ class Item {
     }
 
     public function onHit(owner:Creature, other:Creature):Void {
-        if (onHitAbility == null)
+        if (onHitAbility == null|| Math.random() < 0.5)
             return;
-        onHitAbility.itemUsage(owner, other);
+        onHitAbility.itemUsage(this, owner, other);
     }
 }

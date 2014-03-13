@@ -48,7 +48,7 @@ class NpcAi {
                     target.wander();
             } else {
                 path = AStar.pathTo(target.x, target.y, world.player.x, world.player.y, function(tx:Int, ty:Int):Bool {
-                    return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z);
+                    return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z) && !world.isLava(tx, ty, target.z);
                 }, 20);
                 followPath();
             }
@@ -56,7 +56,7 @@ class NpcAi {
             followPath();
         } else if (homeZ == target.z && (homeX-target.x)*(homeX-target.x)+(homeY-target.y)*(homeY-target.y) > 7*7) {
             path = AStar.pathTo(target.x, target.y, homeX, homeY, function(tx:Int, ty:Int):Bool {
-                return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z);
+                return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z) && !world.isLava(tx, ty, target.z);
             }, 20);
             followPath();
         } else {

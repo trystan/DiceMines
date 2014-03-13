@@ -16,6 +16,6 @@ class Ability {
         return { percent: -10.0, func: function(self:Creature):Void { } };
     }
 
-    public function itemUsage(owner:Creature, other:Creature):Void {
+    public function itemUsage(item:Item, owner:Creature, other:Creature):Void {
     }
 }

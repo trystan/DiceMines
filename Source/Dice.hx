@@ -3,10 +3,10 @@ package;
 class Dice {
 
     public static function rollExact(number:Int, sides:Int, bonus:Int):Int {
-        var total = bonus;
+        var total = 0;
         for (i in 0 ... Math.floor(Math.abs(number)))
             total += Math.floor(Math.random() * sides) + (sides < 0 ? -1 : 1);
-        return total;
+        return total * (number < 0 ? -1 : 1) + bonus;
     }
 
     public static function add(a:String, b:String):String {

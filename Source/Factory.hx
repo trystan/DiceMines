@@ -7,6 +7,10 @@ import knave.Bresenham;
 import knave.Shadowcaster;
 
 class Factory {
+    public static function dice():Item {
+        return new Item(String.fromCharCode(254), Color.hsv(220, 75, 90), "dice", "d" + (Math.floor(Math.random() * 9) + 1));
+    }
+
     public static function hero():Creature {
         var c = new Creature("@", "player", 0, 0, 0);
         c.light = new Shadowcaster();
@@ -158,6 +162,7 @@ class Factory {
         c.abilities.push(ability("pious attack"));
         c.abilities.push(ability("pious defence"));
         c.abilities.push(ability("smite"));
+        c.abilities.push(ability("healing aura"));
         return maybeBig(c, z);
     }
 
@@ -282,14 +287,18 @@ class Factory {
 
     public static function maybeBetter(item:Item):Item {
         var item2 = item;
-        if (Math.random() < 0.33)
+        if (Math.random() < 0.25)
             item2 = addStatBonusToItem(item2);
-        if (Math.random() < 0.33)
+        if (Math.random() < 0.25)
             item2 = addAbilityBonusToItem(item2);
+
         if (item2.name.indexOf("holy") > -1 && item2.name.indexOf("unholy") > -1)
             return item;
-        else
-            return item2;
+
+        if (item2.name.indexOf("smiting") > -1 && item2.name.indexOf("unholy") > -1)
+            return item;
+
+        return item2;
     }
 
     public static function addAbilityBonusToItem(item:Item):Item {
@@ -298,9 +307,9 @@ class Factory {
             case 0: item.onHitAbility = new KnockBackAbility(); modifier = " of knock back";
             case 1: item.onHitAbility = new DisarmingAttackAbility(); modifier = " of disarming";
             case 2: item.onHitAbility = new WoundingAttackAbility(); modifier = " of wounding";
-            case 3: item.onHitAbility = new AccuracyBoostAbility(); modifier = " of accuracy combo";
-            case 4: item.onHitAbility = new DamageBoostAbility(); modifier = " of damage combo";
-            case 5: item.onHitAbility = new IntimidateAbility(); modifier = " of intimidation";
+            case 3: item.onHitAbility = new IntimidateAbility(); modifier = " of intimidation";
+            case 4: item.onHitAbility = new SmiteAbility(); modifier = " of smiting";
+            case 5: item.onHitAbility = new HealingAuraAbility(); modifier = " of healing";
         }
         item.name += modifier;
         return item;
@@ -431,6 +440,10 @@ class JumpAbility extends Ability {
 class KnockBackAbility extends Ability {
     public function new() { super("Knock back", "A successfull hit sends your oppenent back."); }
 
+    override public function itemUsage(item:Item, owner:Creature, other:Creature):Void {
+        apply(owner, other, Dice.roll("3d3+0"));
+    }
+
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
@@ -439,10 +452,6 @@ class KnockBackAbility extends Ability {
                     doIt(self, dice.number, dice.sides);
                }
         };
-    }
-
-    override public function itemUsage(owner:Creature, other:Creature):Void {
-        apply(owner, other, 3, 3, Dice.rollExact(3, 3, 0));
     }
 
     override public function playerUsage(self:Creature):Void {
@@ -456,29 +465,33 @@ class KnockBackAbility extends Ability {
         self.useDice(number, sides);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a knock back attack');
         self.nextAttackEffects.push(function (self:Creature, target:Creature){
-            apply(self, target, number, sides, amount);
+            apply(self, target, amount);
         });
     }
 
-    private function apply(self:Creature, target:Creature, number:Int, sides:Int, amount:Int):Void {
+    private function apply(self:Creature, target:Creature, distance:Int):Void {
         var dx = target.x - self.x + Math.random() - 0.5;
         var dy = target.y - self.y + Math.random() - 0.5;
 
-        dx *= amount;
-        dy *= amount;
+        dx *= distance;
+        dy *= distance;
 
         target.animatePath = Bresenham.line(target.x, target.y, target.x + Math.floor(dx), target.y + Math.floor(dy)).points;
         
         while (target.animatePath.length > 0 && (target.animatePath[0].equals(self.x, self.y) || target.animatePath[0].equals(target.x, target.y)))
             target.animatePath.shift();
         
-        while (target.animatePath.length > amount)
+        while (target.animatePath.length > distance)
             target.animatePath.pop();
     }
 }
 
 class DisarmingAttackAbility extends Ability {
     public function new() { super("disarming attack", "A successfull hit makes your opponent drop their weapon or armor."); } 
+
+    override public function itemUsage(item:Item, self:Creature, target:Creature):Void {
+        apply(self, target, "0d0+0");
+    }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
@@ -501,29 +514,37 @@ class DisarmingAttackAbility extends Ability {
         var amount = number + "d" + sides;
         self.useDice(number, sides);
         self.nextAttackEffects.push(function (self:Creature, target:Creature){
-            if (Dice.roll(self.accuracyStat) + Dice.roll(amount) < Dice.roll(target.evasionStat)) {
-                self.world.addMessage('${target.fullName} evades ${self.fullName}\'s disarming effect'); // '
-                return;
-            }
-            if (target.meleeWeapon != null) {
-                self.world.addItem(target.meleeWeapon, target.x, target.y, target.z);
-                self.world.addMessage('the ${target.meleeWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
-                target.meleeWeapon = null;
-            } else if (target.rangedWeapon != null) {
-                self.world.addItem(target.rangedWeapon, target.x, target.y, target.z);
-                self.world.addMessage('the ${target.rangedWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
-                target.rangedWeapon = null;
-            } else if (target.armor != null) {
-                self.world.addItem(target.armor, target.x, target.y, target.z);
-                self.world.addMessage('the ${target.armor.name} is knocked off of ${target.fullName}\'s body'); // '
-                target.armor = null;
-            }
+            apply(self, target, amount);
         });
+    }
+
+    private function apply(self:Creature, target:Creature, amount:String):Void {
+        if (Dice.roll(self.accuracyStat) + Dice.roll(amount) < Dice.roll(target.evasionStat)) {
+            self.world.addMessage('${target.fullName} evades ${self.fullName}\'s disarming effect'); // '
+            return;
+        }
+        if (target.meleeWeapon != null) {
+            self.world.addItem(target.meleeWeapon, target.x, target.y, target.z);
+            self.world.addMessage('the ${target.meleeWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+            target.meleeWeapon = null;
+        } else if (target.rangedWeapon != null) {
+            self.world.addItem(target.rangedWeapon, target.x, target.y, target.z);
+            self.world.addMessage('the ${target.rangedWeapon.name} is knocked out of ${target.fullName}\'s hands'); // '
+            target.rangedWeapon = null;
+        } else if (target.armor != null) {
+            self.world.addItem(target.armor, target.x, target.y, target.z);
+            self.world.addMessage('the ${target.armor.name} is knocked off of ${target.fullName}\'s body'); // '
+            target.armor = null;
+        }
     }
 }
 
 class WoundingAttackAbility extends Ability { 
     public function new() { super("wounding attack", "A successfull hit lowers a stat for several turns."); }
+
+    override public function itemUsage(item:Item, self:Creature, target:Creature):Void {
+        apply(self, target, Dice.roll("3d3+0") * 2);
+    }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
@@ -545,19 +566,23 @@ class WoundingAttackAbility extends Ability {
         self.world.addMessage('${self.fullName} uses ${number}d$sides to prepare a wounding attack');
         self.useDice(number, sides);
         self.nextAttackEffects.push(function (self:Creature, target:Creature){
-            var stats = ["accuracy", "evasion", "damage", "resistance"];
-            var modifiers = ["2d0+1", "0d2+1", "2d2+0", "1d2+1", "2d1+1", "1d1+2"];
-
-            var wound = { countdown: Dice.rollExact(number, sides, 0) * 2, stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
-            switch (wound.stat) {
-                case "accuracy": target.accuracyStat = Dice.add(target.accuracyStat, wound.modifier);
-                case "evasion": target.evasionStat = Dice.add(target.evasionStat, wound.modifier);
-                case "damage": target.damageStat = Dice.add(target.damageStat, wound.modifier);
-                case "resistance": target.resistanceStat = Dice.add(target.resistanceStat, wound.modifier);
-            }
-            self.world.addMessage('${self.fullName} lowers ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
-            target.addWound(wound);
+            apply(self, target, Dice.rollExact(number, sides, 0) * 2);
         });
+    }
+
+    private function apply(self:Creature, target:Creature, duration:Int):Void {
+        var stats = ["accuracy", "evasion", "damage", "resistance"];
+        var modifiers = ["2d0+1", "0d2+1", "2d2+0", "1d2+1", "2d1+1", "1d1+2"];
+
+        var wound = { countdown: duration, stat: stats[Math.floor(Math.random() * stats.length)], modifier: modifiers[Math.floor(Math.random() * modifiers.length)] };
+        switch (wound.stat) {
+            case "accuracy": target.accuracyStat = Dice.add(target.accuracyStat, wound.modifier);
+            case "evasion": target.evasionStat = Dice.add(target.evasionStat, wound.modifier);
+            case "damage": target.damageStat = Dice.add(target.damageStat, wound.modifier);
+            case "resistance": target.resistanceStat = Dice.add(target.resistanceStat, wound.modifier);
+        }
+        self.world.addMessage('${self.fullName} lowers ${target.fullName}\'s ${wound.stat} by ${wound.modifier} for ${wound.countdown} turns'); // '
+        target.addWound(wound);
     }
 }
 
@@ -622,7 +647,7 @@ class SneakAbility extends Ability {
     private function doIt(self:Creature, number:Int, sides:Int):Void {
         self.invisibleCounter = Dice.rollExact(number, sides, 0);
         self.useDice(number, sides);
-        self.world.addMessage('${self.fullName} uses ${number}d$sides to sneaks away');
+        self.world.addMessage('${self.fullName} uses ${number}d$sides to sneak away');
     }
 }
 
@@ -631,7 +656,7 @@ class AccuracyBoostAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.1,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -661,7 +686,7 @@ class DamageBoostAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.1,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -691,7 +716,7 @@ class MagicMissilesAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.2,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -748,7 +773,7 @@ class OrbOfPainAbility extends Ability {
         }
 
         return { 
-            percent: 0.25,
+            percent: 0.2,
                func: function(self):Void {
                     doIt(self, dice.number, dice.sides, target.x, target.y);
                }
@@ -791,7 +816,7 @@ class ExplosionAbility extends Ability {
             return { percent: 0.0, func: function(self):Void { } };
 
         return { 
-            percent: 0.25,
+            percent: 0.2,
                func: function(self):Void {
                     doIt(self, dice.number, dice.sides, roll, target.x, target.y);
                }
@@ -822,6 +847,10 @@ class ExplosionAbility extends Ability {
 class IntimidateAbility extends Ability {
     public function new() { super("intimidate", "Freighten all enemies who see you"); } 
 
+    override public function itemUsage(item:Item, owner:Creature, other:Creature):Void {
+        apply(owner, Dice.roll("3d3+0"));
+    }
+
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isSentient ? 0 : 0.10,
@@ -842,6 +871,10 @@ class IntimidateAbility extends Ability {
         self.useDice(number, sides);
         var duration = Dice.rollExact(number, sides, 0);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to intimidate enemies for $duration turns');
+        apply(self, duration);
+    }
+
+    private function apply(self:Creature, duration:Int):Void {
         for (c in self.world.creatures) {
             if (c.canSee(self) && c.glyph != "@") {
                 c.fearCounter = duration;
@@ -920,9 +953,15 @@ class TurnUndeadAbility extends Ability {
 class HealingAuraAbility extends Ability {
     public function new() { super("healing aura", "Allies are heald by their piety"); }
 
+    override public function itemUsage(item:Item, owner:Creature, other:Creature):Void {
+        apply(owner, 1);
+        owner.world.addMessage('${owner.fullName}\'s ${item.name} glows briefly'); // '
+    }
+
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        var isOk = 1.0 * self.hp / self.maxHp > 0.5;
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() || isOk ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     doIt(self, dice.number, dice.sides);
@@ -940,6 +979,10 @@ class HealingAuraAbility extends Ability {
         self.useDice(number, sides);
         var duration = Dice.rollExact(number, sides, 0);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to heal allies for $duration turns');
+        apply(self, duration);
+    }
+
+    private function apply(self:Creature, duration:Int):Void {
         self.world.effects.push({
             countdown: duration,
             func: function(turn:Int):Void {
@@ -1046,6 +1089,11 @@ class PiousDefenceAbility extends Ability {
 class SmiteAbility extends Ability {
     public function new() { super("smite", "Damage another based on the difference in piety"); }
 
+    override public function itemUsage(item:Item, owner:Creature, other:Creature):Void {
+        apply(owner, other, 0, 0);
+        owner.world.addMessage('${owner.fullName}\'s ${item.name} glows briefly'); // '
+    }
+
     override public function playerUsage(self:Creature):Void {
         self.world.enter(new SelectDiceScreen(self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
             var radius = Dice.rollExact(number, sides, 0);
@@ -1061,13 +1109,18 @@ class SmiteAbility extends Ability {
         if (other == null) {
             self.world.addMessage('${self.fullName} uses ${number}d$sides to smite nothing in particular');
         } else {
-            var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
-            if (diff > 0) {
+            apply(self, other, number, sides);
+        }
+    }
+
+    private function apply(self:Creature, other:Creature, number:Int, sides:Int):Void {
+        var diff = Dice.roll(self.pietyStat) - Dice.roll(other.pietyStat);
+        if (diff > 0) {
+            if (number > 0)
                 self.world.addMessage('${self.fullName} uses ${number}d$sides to smite ${other.fullName} for ${diff} damage');
-                other.takeDamage(diff, self);
-            } else {
-                self.world.addMessage('${self.fullName} uses ${number}d$sides to fail to smite ${other.fullName} by ${diff}');
-            }
+            other.takeDamage(diff, self);
+        } else if (number > 0) {
+            self.world.addMessage('${self.fullName} uses ${number}d$sides to fail to smite ${other.fullName} by ${diff}'); 
         }
     }
 }
