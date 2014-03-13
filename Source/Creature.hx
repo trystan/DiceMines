@@ -110,7 +110,7 @@ class Creature {
         resistanceStat = "3d3+0";
         pietyStat = "2d2+0";
 
-        gainDice(Dice.roll("1d8+1"));
+        gainDice(Dice.roll("1d4+1"));
     }
 
     public function getPronoun():String {
@@ -371,14 +371,61 @@ class Creature {
     private function checkHealth(attacker:Creature):Void {
         if (hp > maxHp)
             hp = maxHp;
-        if (hp < 1) {
-            isAlive = false;
+        if (hp < 1)
+            die(attacker);
+    }
 
-            if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
-                for (c in world.creatures) {
-                    if (c.canSee(this) && c.glyph != "@")
-                        c.fearCounter += Math.floor(Math.random() * 11) + 3;
-                }
+    private function die(attacker:Creature):Void {
+        isAlive = false;
+
+        var adjacentSpots = new Array<IntPoint>();
+        for (p in new IntPoint(x,y).neighbors9()) {
+            if (!world.blocksMovement(p.x, p.y, z))
+                adjacentSpots.push(p);
+        }
+
+        for (i in 0 ... dice.length) {
+            if (dice[i] == 0 || adjacentSpots.length == 0)
+                continue;
+            var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
+            adjacentSpots.remove(p);
+            var iz = z;
+            while (world.isEmptySpace(p.x, p.y, iz))
+                iz++;
+            world.addItem(Factory.dice(i+1), p.x, p.y, iz);
+        }
+
+        if (meleeWeapon != null && adjacentSpots.length > 0) {
+            var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
+            adjacentSpots.remove(p);
+            var iz = z;
+            while (world.isEmptySpace(p.x, p.y, iz))
+                iz++;
+            world.addItem(meleeWeapon, p.x, p.y, iz);
+        }
+
+        if (rangedWeapon != null && adjacentSpots.length > 0) {
+            var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
+            adjacentSpots.remove(p);
+            var iz = z;
+            while (world.isEmptySpace(p.x, p.y, iz))
+                iz++;
+            world.addItem(rangedWeapon, p.x, p.y, iz);
+        }
+
+        if (armor != null && adjacentSpots.length > 0) {
+            var p = adjacentSpots[Math.floor(Math.random() * adjacentSpots.length)];
+            adjacentSpots.remove(p);
+            var iz = z;
+            while (world.isEmptySpace(p.x, p.y, iz))
+                iz++;
+            world.addItem(armor, p.x, p.y, iz);
+        }
+
+        if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
+            for (c in world.creatures) {
+                if (c.canSee(this) && c.glyph != "@")
+                    c.fearCounter += Math.floor(Math.random() * 11) + 3;
             }
         }
     }
@@ -488,7 +535,7 @@ class Creature {
         }
 
         if (hp < 1)
-            isAlive = false;
+            die(null);
 
         updateVision();
     }

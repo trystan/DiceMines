@@ -365,7 +365,7 @@ class PlayScreen extends Screen {
         return null;
     }
 
-    private function isWalkable(x:Int, y:Int, z:Int):Bool {
+    public function isWalkable(x:Int, y:Int, z:Int):Bool {
         return !blocksMovement(x, y, z) && !isEmptySpace(x, y, z) && !isLava(x, y, z);
     }
 
@@ -456,7 +456,7 @@ class PlayScreen extends Screen {
                         creature.x = x + Math.floor(Math.random() * (r+1)) - r;
                         creature.y = y + Math.floor(Math.random() * (r+1)) - r;
                         creature.z = z;
-                    } while(tiles.get(creature.x, creature.y, creature.z) != tile_floor);
+                    } while(!isWalkable(creature.x, creature.y, creature.z));
                     creature.update();
                 }
             }

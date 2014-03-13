@@ -7,8 +7,10 @@ import knave.Bresenham;
 import knave.Shadowcaster;
 
 class Factory {
-    public static function dice():Item {
-        return new Item(String.fromCharCode(254), Color.hsv(220, 75, 90), "dice", "d" + (Math.floor(Math.random() * 9) + 1));
+    public static function dice(sides:Int = -1):Item {
+        if (sides == -1)
+            sides = Math.floor(Math.random() * 9) + 1;
+        return new Item(String.fromCharCode(254), Color.hsv(220, 75, 90), "dice", "d" + sides);
     }
 
     public static function hero():Creature {
@@ -120,7 +122,7 @@ class Factory {
         c.damageStat = "5d5+5";
         c.isAnimal = true;
         c.abilities.push(ability("wounding attack"));
-        c.sleepCounter = 80 + z * 20;
+        c.sleepCounter = 60 + z * 20 + Dice.roll("1d20");
         return maybeBig(c, z);
     }
 
@@ -132,10 +134,21 @@ class Factory {
         return maybeBig(c, z);
     }
 
+    public static function earthElemental(z:Int):Creature {
+        var c = new Creature("e", "earth elemental", 0, 0, 0);
+        c.evasionStat = "5d5+5";
+        return c;
+    }
+
     public static function skeleton(z:Int):Creature {
         var c = new Creature("s", "skeleton", 0, 0, 0);
-        c.resistanceStat = "5d5+5";
         c.isUndead = true;
+
+        if (Math.random() < 0.9)
+            c.meleeWeapon = new Item("|", Color.hsv(180, 20, 80), "melee", "dice miner's pick");
+
+        if (Math.random() < 0.9)
+            c.armor = new Item("[", Color.hsv(90, 40, 80), "armor", "dice miner's clothes");
         return c;
     }
 
@@ -189,7 +202,7 @@ class Factory {
         switch (Math.floor(Math.random() * 7)) {
             case 0: 
                 var list = new Array<Creature>();
-                var count = Math.floor(2 + Math.random() * 5);
+                var count = Dice.roll("1d6+1");
                 for (i in 0 ... count)
                     list.push(arachnid(z));
                 return list;
@@ -204,7 +217,7 @@ class Factory {
             case 2: return [ghost(z)];
             case 3:
                 var list = new Array<Creature>();
-                var count = Dice.roll("2d2+0");
+                var count = Dice.roll("2d4+0");
                 for (i in 0 ... count)
                     list.push(skeleton(z));
                 return list;
