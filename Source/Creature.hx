@@ -10,6 +10,8 @@ class Creature {
     public var x:Int;
     public var y:Int;
     public var z:Int;
+    public var vx:Int;
+    public var vy:Int;
     public var glyph:String;
     public var name:String;
     public var fullName:String;
@@ -96,11 +98,13 @@ class Creature {
         this.y = y;
         this.z = z;
 
-        if (glyph != "@")
-            new NpcAi(this);
+        if (glyph == "@")
+            new AllyAi(this);
+        else
+            new EnemyAi(this);
 
         nextAttackEffects = new Array<Creature -> Creature -> Void>();
-        dice = [3, 4, 5, 4, 3, 2, 1, 0, 0];
+        dice = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         abilities = new Array<Ability>();
         wounds = new Array<{ countdown:Int, stat:String, modifier:String }>();
 
@@ -158,6 +162,11 @@ class Creature {
         ai.update();
     }
 
+    public function say(text:String) {
+        if (glyph == "@" && isAlive && this != world.player)
+            world.addMessage(name + ' says "$text"');
+    }
+
     public function runFrom(other:Creature):Void {
         var here = new IntPoint(x, y);
         var there = new IntPoint(other.x, other.y);
@@ -202,9 +211,7 @@ class Creature {
 
     public function pickupItem():Void {
         var item = world.removeItem(x, y, z);
-        if (item == null) {
-            world.addMessage('$name grabs at the ground');
-        } else {
+        if (item != null) {
             if (item.type == "dice") {
                 var sides = Std.parseInt(item.name.substr(1));
                 dice[sides-1]++;
@@ -234,9 +241,12 @@ class Creature {
         var other = world.getCreature(x+mx, y+my, z+mz);
         if (other != null)
             attack(other);
-        else if (!world.blocksMovement(x + mx, y + my, z)) {
+        else if (!world.blocksMovement(x + mx, y + my, z + mz)) {
             x += mx;
             y += my;
+
+            vx = mx;
+            vy = my;
             
             if (mz == -1 && world.canGoUp(x, y, z)
              || mz == 1 && world.canGoDown(x, y, z))
@@ -324,6 +334,9 @@ class Creature {
         other.nextAttackEffects = new Array<Creature -> Creature -> Void>();
         for (func in effects)
             func(other, this);
+
+        if (glyph == "@" && other.glyph == "@")
+            say('Careful ${other.name}!');
     }
 
     public function addWound(wound:{ countdown:Int, stat:String, modifier:String }):Void {
@@ -384,6 +397,8 @@ class Creature {
     private function die(attacker:Creature):Void {
         isAlive = false;
 
+        say("Aghhhhh");
+
         var adjacentSpots = new Array<IntPoint>();
         for (p in new IntPoint(x,y).neighbors9()) {
             if (!world.blocksMovement(p.x, p.y, z))
@@ -416,16 +431,16 @@ class Creature {
             dropItem(armor, p.x, p.y, z);
         }
 
-        if (glyph != "@" && (attacker == null || attacker.glyph == "@")) {
+        if (attacker != null && glyph != "@") {
             for (c in world.creatures) {
-                if (c.canSee(this) && c.glyph != "@")
+                if (!c.ai.isEnemy(this) && c.canSee(this))
                     c.fearCounter += Math.floor(Math.random() * 11) + 3;
             }
         }
     }
 
     public function attack(other:Creature):Void {
-        if (glyph != "@" && other.glyph != "@")
+        if (!ai.isEnemy(other))
             return;
         
         reveal();
@@ -483,7 +498,7 @@ class Creature {
                 candidates.push({ number: dice[i], sides: i+1 });
         }
         if (candidates.length == 0)
-            return null;
+            return { number: 0, sides: 0 };
         return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
@@ -499,6 +514,8 @@ class Creature {
     }
 
     public function useDice(number:Int, sides:Int):Void {
+        if (number < 1 || sides < 1)
+            return;
         dice[sides - 1] -= number;
     }
 

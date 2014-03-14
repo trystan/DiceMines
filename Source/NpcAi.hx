@@ -1,87 +1,148 @@
 package;
 
-import knave.IntPoint;
-import knave.AStar;
+import knave.IntPoint3;
+import knave.AStar3;
 
 class NpcAi {
     public var world:World;
-    public var target:Creature;
-    public var path:Array<IntPoint>;
+    public var self:Creature;
+    public var enemy:Creature;
+    public var path:Array<IntPoint3>;
 
-    public var homeX:Int;
-    public var homeY:Int;
-    public var homeZ:Int;
-
-    public function new(target:Creature) {
-        this.target = target;
-        target.ai = this;
-
-        this.homeX = target.x;
-        this.homeY = target.y;
-        this.homeZ = target.z;
+    public function new(self:Creature) {
+        this.self = self;
+        self.ai = this;
     }
 
     public function update():Void {
-        world = target.world;
+        world = self.world;
 
-        if (target.sleepCounter > 0)
+        if (self.z != world.player.z)
             return;
 
-        if (target.canSee(world.player)) {
-            if (target.fearCounter > 0) {
-                target.runFrom(world.player);
-                return;
-            }
+        if (self.sleepCounter > 0)
+            return;
 
-            for (ability in target.abilities) {
-                var data = ability.aiUsage(target);
-                if (data == null || data.percent < Math.random())
-                    continue;
-                data.func(target);
-                return;
-            }
+        enemy = nearestVisibleEnemy();
 
-            if (target.rangedWeapon != null) {
+        if (enemy != null && self.fearCounter > 0) {
+            self.runFrom(enemy);
+            return;
+        }
+
+        if (enemy != null && Math.random() > 0.5) {
+            if (useAbility())
+                return;
+
+            if (self.rangedWeapon != null) {
                 if (Math.random() < 0.5)
-                    target.rangedAttack(world.player.x, world.player.y);
+                    self.rangedAttack(enemy.x, enemy.y);
                 else
-                    target.wander();
+                    self.wander();
             } else {
-                path = AStar.pathTo(target.x, target.y, world.player.x, world.player.y, function(tx:Int, ty:Int):Bool {
-                    return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z) && !world.isLava(tx, ty, target.z);
-                }, 20);
-                followPath();
+                goTo(enemy.x, enemy.y, enemy.z);
             }
         } else if (path != null && path.length > 0) {
             followPath();
-        } else if (homeZ == target.z && (homeX-target.x)*(homeX-target.x)+(homeY-target.y)*(homeY-target.y) > 7*7) {
-            path = AStar.pathTo(target.x, target.y, homeX, homeY, function(tx:Int, ty:Int):Bool {
-                return !world.isEmptySpace(tx, ty, target.z) && !world.blocksMovement(tx, ty, target.z) && !world.isLava(tx, ty, target.z);
-            }, 20);
-            followPath();
         } else {
-            target.wander();
+            doDefault();
         }
+    }
+
+    private function doDefault():Void {
+        self.wander();
+    }
+
+    public function isEnemy(other:Creature):Bool {
+        if (self.glyph == "@" && other.glyph != "@")
+            return true;
+        if (self.glyph != "@" && other.glyph == "@")
+            return true;
+
+        return false;
+    }
+
+    private function nearestVisibleEnemy():Creature {
+        if (enemy != null && enemy.isAlive && self.canSee(enemy) && Math.random() < 0.75)
+            return enemy;
+
+        var closest:Creature = null;
+        var closestDist = 10000.0;
+        var fromPoint = new IntPoint3(self.x, self.y, self.z);
+
+        var potentials = self.glyph == "@" ? world.heroParty : world.creatures;
+
+        for (c in potentials) {
+            if (self == c || !isEnemy(c) || !self.canSee(c))
+                continue;
+
+            if (c.sleepCounter > 0)
+                continue;
+
+            var dist = fromPoint.distanceTo(new IntPoint3(c.x, c.y, c.z));
+            if (dist > closestDist)
+                continue;
+            closestDist = dist;
+            closest = c;
+        }
+        return closest;
     }
 
     private function followPath():Void {
-        if (path == null || path.length == 0) {
-            target.wander();
-            return;
-        }
-        if (Math.random() < 0.1) {
-            target.wander();
+        while (path != null && path.length > 0 && path[0].x == self.x && path[0].y == self.y)
+            path.shift();
+        
+        if (path == null || path.length == 0 || Math.random() < 0.1) {
             path = null;
+            self.wander();
             return;
         }
         var next = path.shift();
-        var mx = next.x - target.x;
-        var my = next.y - target.y;
+        var mx = next.x - self.x;
+        var my = next.y - self.y;
+        var mz = next.z - self.z;
         if (Math.abs(mx) > 1 || Math.abs(my) > 1) {
             path = null;
-            target.wander();
-        } else
-            target.move(mx, my, 0);
+            self.wander();
+        } else {
+            var other = world.getCreature(self.x+mx, self.y+my, self.z+mz);
+            if (other == null || isEnemy(other))
+                self.move(mx, my, mz);
+            else
+                path = null;
+        }
     }
 
+    public function goTo(tx:Int, ty:Int, tz:Int):Void {
+        if (path == null || path.length == 0 || path[path.length-1].x != tx || path[path.length-1].y != ty || path[path.length-1].z != tz) {
+            path = AStar3.pathTo(new IntPoint3(self.x, self.y, self.z), new IntPoint3(tx, ty, tz), function(p:IntPoint3):Array<IntPoint3> {
+                while (world.isEmptySpace(p.x, p.y, p.z))
+                    p = p.plus(new IntPoint3(0, 0, 1));
+                var ok = new Array<IntPoint3>();
+                for (p2 in p.neighbors8()) {
+                    if (world.isWalkable(p2.x, p2.y, p.z) || world.isEmptySpace(p2.x, p2.y, p2.z))
+                        ok.push(p2);
+                }
+                if (world.canGoUp(p.x, p.y, p.z))
+                    ok.push(p.plus(new IntPoint3(0, 0, -1)));
+                if (world.canGoDown(p.x, p.y, p.z))
+                    ok.push(p.plus(new IntPoint3(0, 0, 1)));
+                return ok;
+            }, 40);
+            // trace("A*3 = " + path.length);
+        }
+
+        followPath();
+    }
+
+    public function useAbility():Bool {
+        for (ability in self.abilities) {
+            var data = ability.aiUsage(self);
+            if (data == null || data.percent < Math.random())
+                continue;
+            data.func(self);
+            return true;
+        }
+        return false;
+    }
 }

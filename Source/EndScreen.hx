@@ -75,19 +75,9 @@ class EndScreen extends Screen {
     }
 
     private function saveScores(so:SharedObject):Void {
-
-        // Prepare to save.. with some checks
-#if ( cpp || neko )
-        // Android didn't wanted SharedObjectFlushStatus not to be a String
-        var flushStatus:SharedObjectFlushStatus = null;
-#else
-        // Flash wanted it very much to be a String
-        var flushStatus:String = null;
-#end
-
         try
         {
-            flushStatus = so.flush();
+            so.flush();
         }
         catch (e: Dynamic) {
             trace("Couldn't save highscores");

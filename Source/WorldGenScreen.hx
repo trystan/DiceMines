@@ -33,6 +33,7 @@ class WorldGenScreen extends Screen {
             { name:" removing diagonals", func:removeDiagonals },
             { name:" adding stairs", func:addStairs },
             { name:" adding player", func:addPlayer },
+            { name:" adding allies", func:addAllies },
             { name:" adding creatures", func:addCreatures },
             { name:" adding items", func:addItems },
             { name:" adding dice", func:addDice },
@@ -84,7 +85,7 @@ class WorldGenScreen extends Screen {
     }
 
     private function addPlayer():Void {
-        var player = Factory.hero();
+        var player = Factory.hero(true);
         world.player = player;
         world.addCreature(player);
         do {
@@ -92,6 +93,19 @@ class WorldGenScreen extends Screen {
             player.y = Math.floor(Math.random() * (world.tiles.height - 20) + 10);
         } while(world.tiles.get(player.x, player.y, player.z) != world.tile_floor);
         player.update();
+    }
+
+    private function addAllies():Void {
+        var total = Dice.roll("2d4+0");
+        for (i in 0 ... total) {
+            var ally = Factory.hero(false);
+            world.addCreature(ally);
+            do {
+                ally.x = world.player.x + Math.floor(Math.random() * 11) - 5;
+                ally.y = world.player.y + Math.floor(Math.random() * 11) - 5;
+            } while(world.tiles.get(ally.x, ally.y, ally.z) != world.tile_floor);
+            ally.update();
+        }
     }
 
     private function addCreatures():Void {
@@ -398,7 +412,8 @@ class WorldGenScreen extends Screen {
 
                 count++;
                 world.tiles.set(x, y, z, world.tile_stairs_up);
-                world.tiles.set(x, y, z+1, world.tile_stairs_down);
+                if (z > 0)
+                    world.tiles.set(x, y, z-1, world.tile_stairs_down);
             }
         }
     }

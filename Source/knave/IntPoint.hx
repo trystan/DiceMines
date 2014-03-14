@@ -45,7 +45,7 @@ class IntPoint {
 
     public function neighbors9():Array<IntPoint> {
         var all = new Array<IntPoint>();
-        all.push(this);
+        all.push(this.plus(new IntPoint(0,0)));
         for (offset in offsets8())
             all.push(this.plus(offset));
         return all;

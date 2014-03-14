@@ -143,7 +143,7 @@ class PlayScreen extends Screen {
         for (sy in 0 ... display.heightInCharacters) {
             var x = sx + vx;
             var y = sy + vy;
-            if (player.light.isLit(x, y)) {
+            if (isVisible(x, y, player.z)) {
                 var g = getGraphic(x, y, player.z);
 
                 var item = world.getItem(x, y, player.z);
@@ -155,7 +155,7 @@ class PlayScreen extends Screen {
         }
 
         for (c in world.creatures) {
-            if (c.z != player.z || !player.light.isLit(c.x, c.y) || (c != player && !c.isVisible()))
+            if (c.z != player.z || !isVisible(c.x, c.y, c.z) || (c != player && !c.isVisible()))
                 continue;
 
             var g = getGraphic(c.x, c.y, c.z);
@@ -215,6 +215,14 @@ class PlayScreen extends Screen {
         }
 
         display.update();
+    }
+
+    private function isVisible(x:Int, y:Int, z:Int):Bool {
+        for (c in world.heroParty) {
+            if (c.isAlive && c.z == player.z && c.light.isLit(x, y))
+                return true;
+        }
+        return false;
     }
 
     private function getCreatureColor(creature:Creature):Color {

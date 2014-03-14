@@ -10,11 +10,28 @@ class Factory {
     public static function dice(sides:Int = -1):Item {
         if (sides == -1)
             sides = Math.floor(Math.random() * 9) + 1;
-        return new Item(String.fromCharCode(254), Color.hsv(220, 75, 90), "dice", "d" + sides);
+        return new Item(String.fromCharCode(254), new Color(220, 220, 220), "dice", "d" + sides);
     }
 
-    public static function hero():Creature {
-        var c = new Creature("@", "player", 0, 0, 0);
+    private static function name(isFemale:Bool):String {
+        var first = ["ara", "boro"];
+        var second = ["go", "la"];
+        var third = ["n", "z"];
+
+        var result = first[Math.floor(Math.random() * first.length)]
+                    + second[Math.floor(Math.random() * second.length)]
+                    + third[Math.floor(Math.random() * third.length)];
+
+        if (isFemale)
+            result += "aeiouy".charAt(Math.floor(Math.random() * 6));
+
+        return result;
+    }
+
+    public static function hero(isPlayer:Bool):Creature {
+        var c = new Creature("@", "ally", 0, 0, 0);
+        c.name = name(c.gender == "f");
+        c.fullName = c.name;
         c.light = new Shadowcaster();
 
         var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
@@ -392,11 +409,14 @@ class JumpAbility extends Ability {
     public function new() { super("Jump", "Move several spaces at once."); }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        if (self.ai.enemy == null)
+            return { percent: 0.0, func: function(self):Void { } };
+
         var here = new IntPoint(self.x, self.y);
-        var target = new IntPoint(self.world.player.x, self.world.player.y);
+        var target = new IntPoint(self.ai.enemy.x, self.ai.enemy.y);
         var dice = self.getDiceToUseForAbility();
 
-        if (dice == null || here.distanceTo(target) < 2)
+        if (dice.number == 0 || here.distanceTo(target) < 2)
             return { percent: 0.0, func: function(self):Void { } };
 
         var roll = Dice.rollExact(dice.number, dice.sides, 0);
@@ -462,7 +482,8 @@ class KnockBackAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -511,7 +532,8 @@ class DisarmingAttackAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -564,7 +586,8 @@ class WoundingAttackAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.75,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -607,7 +630,8 @@ class RapidAttackAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -646,7 +670,8 @@ class SneakAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() || !self.isVisible() ? 0 : 0.20,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -672,7 +697,8 @@ class AccuracyBoostAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.1,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -702,7 +728,8 @@ class DamageBoostAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.1,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -729,10 +756,11 @@ class MagicMissilesAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.2,
+            percent: !self.hasDice() || self.ai.enemy == null ? 0 : 0.2,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -770,11 +798,14 @@ class OrbOfPainAbility extends Ability {
     public function new() { super("orb of pain", "Cast a powerfull projectile with a bost to accuracy and damage."); }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        if (self.ai.enemy == null)
+            return { percent: 0.0, func: function(self):Void { } };
+
         var here = new IntPoint(self.x, self.y);
-        var target = new IntPoint(self.world.player.x, self.world.player.y);
+        var target = new IntPoint(self.ai.enemy.x, self.ai.enemy.y);
         var dice = self.getDiceToUseForAbility();
 
-        if (dice == null || here.distanceTo(target) > 10)
+        if (dice.number == 0 || here.distanceTo(target) > 10)
             return { percent: 0.0, func: function(self):Void { } };
 
         var points = Bresenham.line(self.x, self.y, target.x, target.y).points;
@@ -816,11 +847,14 @@ class ExplosionAbility extends Ability {
     public function new() { super("explosion", "Cast a firey explosion that affects a wide area."); }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
+        if (self.ai.enemy == null)
+            return { percent: 0.0, func: function(self):Void { } };
+
         var here = new IntPoint(self.x, self.y);
-        var target = new IntPoint(self.world.player.x, self.world.player.y);
+        var target = new IntPoint(self.ai.enemy.x, self.ai.enemy.y);
         var dice = self.getDiceToUseForAbility();
 
-        if (dice == null || here.distanceTo(target) > 20)
+        if (dice.number == 0 || here.distanceTo(target) > 20)
             return { percent: 0.0, func: function(self):Void { } };
 
         var roll = Dice.rollExact(dice.number, dice.sides, 0);
@@ -869,7 +903,8 @@ class IntimidateAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isSentient ? 0 : 0.10,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -904,7 +939,8 @@ class SootheAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.10,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -935,7 +971,8 @@ class TurnUndeadAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isUndead ? 0 : 0.10,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -977,7 +1014,8 @@ class HealingAuraAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() || isOk ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -1017,7 +1055,8 @@ class PiousAttackAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }
@@ -1062,7 +1101,8 @@ class PiousDefenceAbility extends Ability {
             percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
-                    doIt(self, dice.number, dice.sides);
+                    if (dice.number > 0)
+                        doIt(self, dice.number, dice.sides);
                }
         };
     }

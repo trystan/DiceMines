@@ -22,6 +22,7 @@ class World {
     public var fireList:Array<String>;
     public var fireMap:Map<String, Bool>;
     public var creatures:Array<Creature>;
+    public var heroParty:Array<Creature>;
     public var items:Map<String, Item>;
     public var messages:Array<String>;
     public var projectiles:Array<Projectile>;
@@ -38,6 +39,7 @@ class World {
         fireMap = new Map<String, Bool>();
         effects = new Array<{ countdown:Int, func:Int -> Void }>();
         creatures = new Array<Creature>();
+        heroParty = new Array<Creature>();
         items = new Map<String, Item>();
     }
 
@@ -118,6 +120,8 @@ class World {
     public function addCreature(creature:Creature):Void {
         creature.world = this;
         creatures.push(creature);
+        if (creature.glyph == "@")
+            heroParty.push(creature);
     }
 
     public function getCreature(x:Int, y:Int, z:Int):Creature {
