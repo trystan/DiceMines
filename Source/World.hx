@@ -1,6 +1,7 @@
 package;
 
 import knave.Grid3;
+import knave.Text;
 
 class World {
     public var playScreen:PlayScreen;
@@ -82,9 +83,7 @@ class World {
     }
 
     public function addMessage(text:String):Void {
-        while (text.indexOf("  ") > -1)
-            text = StringTools.replace(text, "  ", " ");
-        messages.push(text);
+        messages.push(Text.sentence(text));
     }
 
     public function isOnFire(x:Int, y:Int, z:Int):Bool {

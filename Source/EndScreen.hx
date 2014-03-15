@@ -1,9 +1,7 @@
 package;
 
 import flash.net.SharedObject;
-import knave.Screen;
-import knave.AsciiDisplay;
-import knave.Color;
+import knave.*;
 
 class EndScreen extends Screen {
     private var playScreen:PlayScreen;
@@ -47,16 +45,17 @@ class EndScreen extends Screen {
         else
             "buy half a sandwich";
 
-        var partyName = playScreen.player.name;
-        if (playScreen.world.heroParty.length == 1)
-            partyName = "just " + partyName;
+        var partyName = if (playScreen.world.heroParty.length == 1)
+            "just " + playScreen.player.name;
         else
-            partyName += " and " + playScreen.player.world.heroParty.length + " others";
+            playScreen.player.name + " and " + playScreen.player.world.heroParty.length + " others";
+
+        partyName = Text.sentence(partyName);
 
         if (playScreen.player.z < 0)
-            display.writeCenter('you escaped with enough dice to $outcome. ($points total sides)', 2, fg);
+            display.writeCenter(Text.sentence('you escaped with enough dice to $outcome. ($points total sides)'), 2, fg);
         else
-            display.writeCenter('you died with enough dice to $outcome. ($points total sides)', 2, fg);
+            display.writeCenter(Text.sentence('you died with enough dice to $outcome. ($points total sides)'), 2, fg);
 
         var entry = { points: points, text: '${Date.now().toString()} - $partyName' };
         var so = loadScores();
@@ -99,7 +98,6 @@ class EndScreen extends Screen {
     private function saveScores(so:SharedObject):Void {
         try
         {
-            //so.data.scores = new Array<{ points:Int, text:String }>();
             so.flush();
         }
         catch (e: Dynamic) {

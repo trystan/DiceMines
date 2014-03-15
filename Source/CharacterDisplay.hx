@@ -23,25 +23,8 @@ class CharacterDisplay {
         display.write(hero.hp + "/" + hero.maxHp + " hit points", x, y++);
         y++;
 
-        var history = [];
-        var about = hero.about;
-        var max = display.widthInCharacters - x - 37;
-        while (about.length > 0) {
-            if (about.length <= max) {
-                history.push(about);
-                about = "";
-            }
-            var cutPoint = max;
-            while (cutPoint > 0 && about.charAt(cutPoint) != " ")
-                cutPoint--;
-            history.push(about.substr(0, cutPoint));
-            about = about.substr(cutPoint);
-            while (about.length > 0 && about.charAt(0) == " ")
-                about = about.substr(1);
-        }
-
         var hy = y - 8;
-        for (line in history)
+        for (line in Text.wordWrap(hero.about, display.widthInCharacters - x - 37))
             display.write(line, x + 35, hy++);
 
         if (compact) {
@@ -54,7 +37,7 @@ class CharacterDisplay {
                 equipment.push(hero.armor.name);
 
             if (equipment.length > 0)
-                display.write("Uses " + equipment.join(", ") + ".", x, y++);
+                display.write("Uses " + Text.andList(equipment) + ".", x, y++);
         } else {
             display.write("Equipment:", x, y++);
             display.write("sword " + (hero.meleeWeapon == null ? "none" : hero.meleeWeapon.describe()), x, y++);
@@ -64,9 +47,9 @@ class CharacterDisplay {
         }
 
         if (compact) {
-            var list = Lambda.map(hero.abilities, function(a):String { return a.name.toLowerCase(); });
+            var list = Lambda.array(Lambda.map(hero.abilities, function(a):String { return a.name.toLowerCase(); }));
             if (list.length > 0)
-                display.write("Knows " + list.join(", ") + ".", x, y++);
+                display.write("Knows " + Text.andList(list) + ".", x, y++);
         } else {
             display.write("Special abilities:", x-1, y++, light);
             for (ability in hero.abilities) {

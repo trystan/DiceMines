@@ -1,9 +1,6 @@
 package;
 
-import knave.Color;
-import knave.IntPoint;
-import knave.Bresenham;
-import knave.Shadowcaster;
+import knave.*;
 
 class Creature {
     public var world:World;
@@ -20,11 +17,11 @@ class Creature {
 
     public var extroversion:Float;
     public var greed:Float;
-    public var mood:Float;
+    public var helpfulness:Float;
     public var lore:Float;
 
     public var about:String;
-    public function addHistory(line:String):Void { about += " " + line; }
+    public function addHistory(line:String):Void { about += " " + Text.sentence(line); }
 
     public function isHero():Bool { return glyph == "@"; }
 
@@ -112,7 +109,7 @@ class Creature {
 
         extroversion = Math.random();
         greed = Math.random();
-        mood = Math.random();
+        helpfulness = Math.random();
         lore = Math.random();
 
         if (isHero())

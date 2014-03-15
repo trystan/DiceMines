@@ -187,7 +187,7 @@ class PlayScreen extends Screen {
         var bg = new Color(0, 0, 0).toInt();
 
         for (c in world.heroParty) {
-            if (!c.isAlive)
+            if (!c.isAlive && c != player)
                 continue;
 
             var labelColor = c == world.player ? playerColor.toInt() : c.color.toInt();
@@ -233,7 +233,7 @@ class PlayScreen extends Screen {
 
     private function isVisible(x:Int, y:Int, z:Int):Bool {
         for (c in world.heroParty) {
-            if (c.isAlive && c.z == player.z && c.light.isLit(x, y))
+            if ((c.isAlive || c == player) && c.z == player.z && c.light.isLit(x, y))
                 return true;
         }
         return false;

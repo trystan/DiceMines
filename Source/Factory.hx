@@ -1,10 +1,7 @@
 package;
 
 import StringTools;
-import knave.IntPoint;
-import knave.Color;
-import knave.Bresenham;
-import knave.Shadowcaster;
+import knave.*;
 
 class Factory {
     public static function dice(sides:Int = -1):Item {
@@ -18,7 +15,10 @@ class Factory {
         var femaleNames = ['mary','patricia','linda','barbara','elizabeth','jennifer','maria','susan','margaret','dorothy','lisa','nancy','karen','betty','helen','sandra','donna','carol','ruth','sharon','michelle','laura','sarah','kimberly','deborah','jessica','shirley','cynthia','angela','melissa','brenda','amy','anna','rebecca','virginia','kathleen','pamela','martha','debra','amanda','stephanie','carolyn','christine','marie','janet','catherin','frances','ann','joyce','diane'];
         var lastNames = ['smith','johnson','williams','brown','jones','miller','davis','garcia','rodriguez','wilson','martinez','anderson','taylor','thomas','hernandez','moore','martin','jackson','thompson','white','lopez','lee','gonzalez','harris','clark','lewis','robinson','walker','perez','hall','young','allen','sanchez','wright','king','scott','green','baker','adams','nelson','hill','ramirez','campbell','mitchell','roberts','carter','phillips','evans','turner','torres'];
 
-        return (isFemale ? femaleNames[Math.floor(Math.random() * femaleNames.length)] : maleNames[Math.floor(Math.random() * maleNames.length)]) + " " + lastNames[Math.floor(Math.random() * lastNames.length)];
+        var firstName = isFemale ? femaleNames[Math.floor(Math.random() * femaleNames.length)] : maleNames[Math.floor(Math.random() * maleNames.length)];
+        var lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+
+        return firstName.charAt(0).toUpperCase() + firstName.substr(1) + " " + lastName.charAt(0).toUpperCase() + lastName.substr(1);
     }
 
     public static function hero():Creature {
@@ -35,8 +35,8 @@ class Factory {
 
         var dad = createParent(c);
         var mom = createParent(c);
-        var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and " + mom + ".");
-        c.about = c.name + birth + " " + c.about;
+        var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and a " + mom + ".");
+        c.about = c.name + birth;
 
         addHistory(c, 3);
 
@@ -60,7 +60,7 @@ class Factory {
         }
 
         if (descriptors.length > 0)
-            c.addHistory(c.getSubjectPronoun() + " " + descriptors.join(", ") + ".");
+            c.addHistory(c.getSubjectPronoun() + " " + Text.andList(descriptors) + ".");
 
         c.hp = c.maxHp;
 
@@ -81,7 +81,7 @@ class Factory {
         if (Math.random() < 0.33) {
             traits.push("likes adventuring");
             c.lore += 0.10;
-            c.mood += 0.10;
+            c.helpfulness += 0.10;
         }
 
         if (c.extroversion < 0.10)
@@ -102,14 +102,14 @@ class Factory {
         else if (c.greed > 0.90)
             traits.push("has been called greedy");
 
-        if (c.mood < 0.10)
-            traits.push("is often in a bad mood");
-        else if (c.mood < 0.33)
-            traits.push("is sometimes in a bad mood");
-        else if (c.mood > 0.66)
-            traits.push("is sometimes in a good mood");
-        else if (c.mood > 0.90)
-            traits.push("is often in a good mood");
+        if (c.helpfulness < 0.10)
+            traits.push("only looks out for " + c.getPronoun() + "self");
+        else if (c.helpfulness < 0.33)
+            traits.push("usually looks out for " + c.getPronoun() + "self");
+        else if (c.helpfulness > 0.66)
+            traits.push("is willing to help others");
+        else if (c.helpfulness > 0.90)
+            traits.push("is always looking to help others");
 
         if (c.lore > 0.90)
             traits.push("knows a lot about the world");
@@ -128,7 +128,7 @@ class Factory {
             traits.push('prefers to stay far $direction the group');
 
         if (traits.length > 0)
-            c.addHistory(c.getSubjectPronoun() + " " + traits.join(", ") + ".");
+            c.addHistory(c.getSubjectPronoun() + " " + Text.andList(traits) + ".");
 
         return c;
     }
@@ -200,12 +200,14 @@ class Factory {
                     potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
                     c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.helpfulness += 0.05;
                     c.gainDice(1);
                 case 4: // stealth
                     history = '${c.getSubjectPronoun()} got into trouble as a kid.';
                     c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak", "soothe"];
+                    c.helpfulness -= 0.05;
                     c.gainDice(1);
             }
         }
