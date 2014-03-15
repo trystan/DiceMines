@@ -133,8 +133,8 @@ class World {
         return null;
     }
 
-    public function isWalkable(x:Int, y:Int, z:Int):Bool {
-        return !blocksMovement(x, y, z) && !isEmptySpace(x, y, z) && !isLava(x, y, z);
+    public function isWalkable(x:Int, y:Int, z:Int, canFly:Bool = false):Bool {
+        return !blocksMovement(x, y, z) && (canFly || !isEmptySpace(x, y, z)) && !isLava(x, y, z);
     }
 
     public function isEmptySpace(x:Int, y:Int, z:Int):Bool {

@@ -22,9 +22,10 @@ class AllyAi extends NpcAi {
         if (self.sleepCounter > 0)
             return;
 
-        enemy = nearestVisibleEnemy();
+        if (Math.random() < self.aggresiveness)
+            enemy = nearestVisibleEnemy();
 
-        if (enemy == null) {
+        if (enemy == null && Math.random() < self.helpfulness) {
             for (c in world.heroParty) {
                 if (c.isAlive && c.z == self.z && c.ai.enemy != null) {
                     enemy = c.ai.enemy;
@@ -40,7 +41,7 @@ class AllyAi extends NpcAi {
             return;
         }
 
-        if (enemy != null && self.distanceTo(enemy) > favoredDistance * 2)
+        if (enemy != null && self.distanceTo(enemy) > favoredDistance + favoredDistance * self.aggresiveness)
             enemy = null;
 
         if (enemy != null && (!world.player.isVisible() || self.distanceTo(world.player) < favoredDistance)) {

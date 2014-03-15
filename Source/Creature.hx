@@ -18,6 +18,7 @@ class Creature {
     public var extroversion:Float;
     public var greed:Float;
     public var helpfulness:Float;
+    public var aggresiveness:Float;
     public var lore:Float;
 
     public var about:String;
@@ -35,9 +36,7 @@ class Creature {
     public var evasionStat:String;
     public var resistanceStat:String;
     public var pietyStat:String;
-    public var isUndead:Bool = false;
-    public var isAnimal:Bool = false;
-    public var isSentient:Bool = false;
+    public var isFlying:Bool = false;
     public var sleepCounter:Int = 0;
     public var fearCounter:Int = 0;
 
@@ -110,6 +109,7 @@ class Creature {
         extroversion = Math.random();
         greed = Math.random();
         helpfulness = Math.random();
+        aggresiveness = Math.random();
         lore = Math.random();
 
         if (isHero())
@@ -479,6 +479,9 @@ class Creature {
                     c.fearCounter += Math.floor(Math.random() * 11) + 3;
             }
         }
+
+        if (isHero())
+            world.addCreature(Factory.ghost(z, this));
     }
 
     public function attack(other:Creature):Void {
@@ -574,7 +577,7 @@ class Creature {
         recoverFromWounds();
 
         var fallDistance = 0;
-        while (world.isEmptySpace(x, y, z)) {
+        while (world.isEmptySpace(x, y, z) && !isFlying) {
             z++;
             fallDistance++;
         }

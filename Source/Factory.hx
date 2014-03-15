@@ -110,6 +110,15 @@ class Factory {
             traits.push("is willing to help others");
         else if (c.helpfulness > 0.90)
             traits.push("is always looking to help others");
+        
+        if (c.aggresiveness < 0.10)
+            traits.push("is peaceful");
+        else if (c.aggresiveness < 0.33)
+            traits.push("is not aggresive");
+        else if (c.aggresiveness > 0.66)
+            traits.push("is aggresive");
+        else if (c.aggresiveness > 0.90)
+            traits.push("is very aggresive");
 
         if (c.lore > 0.90)
             traits.push("knows a lot about the world");
@@ -253,7 +262,6 @@ class Factory {
     public static function arachnid(z:Int):Creature {
         var c = new Creature("a", "arachnid", 0, 0, 0);
         c.accuracyStat = "5d5+5";
-        c.isAnimal = true;
         c.abilities.push(ability("Jump"));
         return maybeBig(c, z);
     }
@@ -261,41 +269,36 @@ class Factory {
     public static function bear(z:Int):Creature {
         var c = new Creature("b", "bear", 0, 0, 0);
         c.damageStat = "5d5+5";
-        c.isAnimal = true;
         c.abilities.push(ability("wounding attack"));
         c.sleepCounter = 60 + z * 20 + Dice.roll("1d20+0");
         return maybeBig(c, z);
     }
 
-    public static function ghost(z:Int):Creature {
-        var c = new Creature("g", "ghost", 0, 0, 0);
-        c.isUndead = true;
-        c.evasionStat = "5d5+5";
+    public static function ghost(z:Int, of:Creature = null):Creature {
+        var c = new Creature("g", (of == null ? "ghost" : of.fullName + "'s ghost"), 0, 0, 0);
         c.abilities.push(ability("sneak"));
-        return maybeBig(c, z);
-    }
+        if (of != null) {
+            c.maxHp = of.maxHp;
+            c.hp = c.maxHp;
+            c.evasionStat = Dice.add(c.evasionStat, "3d3+3");
+            c.fearCounter = Dice.roll("3d3+3");
+            c.x = of.x;
+            c.y = of.y;
+            c.z = of.z;
+            return c;
+        } else {
+            c.evasionStat = "5d5+5";
+            if (Math.random() < 0.9)
+                c.meleeWeapon = new Item("|", Color.hsv(180, 20, 80), "melee", "dice miner's pick");
 
-    public static function earthElemental(z:Int):Creature {
-        var c = new Creature("e", "earth elemental", 0, 0, 0);
-        c.evasionStat = "5d5+5";
-        return c;
-    }
-
-    public static function skeleton(z:Int):Creature {
-        var c = new Creature("s", "skeleton", 0, 0, 0);
-        c.isUndead = true;
-
-        if (Math.random() < 0.9)
-            c.meleeWeapon = new Item("|", Color.hsv(180, 20, 80), "melee", "dice miner's pick");
-
-        if (Math.random() < 0.9)
-            c.armor = new Item("[", Color.hsv(90, 40, 80), "armor", "dice miner's clothes");
-        return c;
+            if (Math.random() < 0.9)
+                c.armor = new Item("[", Color.hsv(90, 40, 80), "armor", "dice miner's clothes");
+            return maybeBig(c, z);
+        }
     }
 
     public static function fairy(z:Int):Creature {
         var c = new Creature("f", "fairy", 0, 0, 0);
-        c.isSentient = true;
         if (Math.random() > z / 10.0)
             c.abilities.push(ability("magic missiles"));
         if (Math.random() > z / 15.0)
@@ -305,42 +308,24 @@ class Factory {
         return c;
     }
 
-    public static function lizardfolk(z:Int):Creature {
-        var c:Creature = null;
-        if (Math.random() < 0.5)
-            c = new Creature("l", "lizardman", 0, 0, 0, "m");
-        else
-            c = new Creature("l", "lizardwoman", 0, 0, 0, "f");
-        c.pietyStat = "5d5+5";
-        c.isSentient = true;
-        c.abilities.push(ability("pious attack"));
-        c.abilities.push(ability("pious defence"));
-        c.abilities.push(ability("smite"));
-        c.abilities.push(ability("healing aura"));
-        return maybeBig(c, z);
-    }
-
     public static function orc(z:Int):Creature {
         var c = new Creature("o", "orc", 0, 0, 0);
         c.rangedWeapon = orcishBow();
-        c.isSentient = true;
-        return maybeBig(c, z);
+        return c;
     }
 
     public static function enemy(z:Int):Creature {
-        switch (Math.floor(Math.random() * 7)) {
+        switch (Math.floor(Math.random() * 5)) {
             case 0: return arachnid(z);
             case 1: return bear(z);
             case 2: return ghost(z);
-            case 3: return skeleton(z);
-            case 4: return lizardfolk(z);
-            case 5: return fairy(z);
+            case 3: return fairy(z);
             default: return orc(z);
         }
     }
 
     public static function enemies(z:Int):Array<Creature> {
-        switch (Math.floor(Math.random() * 7)) {
+        switch (Math.floor(Math.random() * 5)) {
             case 0: 
                 var list = new Array<Creature>();
                 var count = Dice.roll("1d6+1");
@@ -356,21 +341,6 @@ class Factory {
                 return list;
 
             case 2: return [ghost(z)];
-            case 3:
-                var list = new Array<Creature>();
-                var count = Dice.roll("2d4+0");
-                for (i in 0 ... count)
-                    list.push(skeleton(z));
-                return list;
-
-            case 4:
-                var list = new Array<Creature>();
-                var count = Dice.roll("2d2+0");
-                for (i in 0 ... count)
-                    list.push(lizardfolk(z));
-                return list;
-
-            case 5: return [fairy(z)];
 
             default:
                 var list = new Array<Creature>();
@@ -1027,7 +997,7 @@ class IntimidateAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isSentient ? 0 : 0.10,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.10,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     if (dice.number > 0)
@@ -1091,11 +1061,11 @@ class SootheAbility extends Ability {
 }
 
 class TurnUndeadAbility extends Ability {
-    public function new() { super("turn undead", "Damage all visible ghosts and skeletons"); }
+    public function new() { super("turn undead", "Damage all visible ghosts"); }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() || self.isUndead ? 0 : 0.10,
+            percent: !self.hasDice() ? 0 : 0.01,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     if (dice.number > 0)
@@ -1118,7 +1088,7 @@ class TurnUndeadAbility extends Ability {
             countdown: duration,
             func: function(turn:Int):Void {
                 for (c in self.world.creatures) {
-                    if (c.isUndead && self.canSee(c)) {
+                    if (c.glyph == "g" && self.canSee(c)) {
                         c.takeDamage(Dice.roll(self.pietyStat), self);
                     }
                 }

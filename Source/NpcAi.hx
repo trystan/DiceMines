@@ -128,16 +128,16 @@ class NpcAi {
         if (path == null || path.length == 0 || path[path.length-1].x != tx || path[path.length-1].y != ty || path[path.length-1].z != tz) {
             if (self.z == tz) {
                 path = AStar.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, self.z), function(p:IntPoint):Bool {
-                    return world.isWalkable(p.x, p.y, p.z);
+                    return world.isWalkable(p.x, p.y, p.z, self.isFlying);
                 }, 40);
 
             } else if (self.z != tz) {
                 path = AStar3.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, tz), function(p:IntPoint):Array<IntPoint> {
-                    while (world.isEmptySpace(p.x, p.y, p.z))
+                    while (!self.isFlying && world.isEmptySpace(p.x, p.y, p.z))
                         p = p.plus(new IntPoint(0, 0, 1));
                     var ok = new Array<IntPoint>();
                     for (p2 in p.neighbors8()) {
-                        if (world.isWalkable(p2.x, p2.y, p.z) || world.isEmptySpace(p2.x, p2.y, p2.z))
+                        if (world.isWalkable(p2.x, p2.y, p.z, self.isFlying) || world.isEmptySpace(p2.x, p2.y, p2.z))
                             ok.push(p2);
                     }
                     if (world.canGoUp(p.x, p.y, p.z))
