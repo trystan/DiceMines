@@ -43,27 +43,51 @@ class EndScreen extends Screen {
         else if (points > 100)
             "buy better equipment";
         else if (points > 50)
-            "buy a lunch";
+            "buy a nice meal";
         else if (points > 25)
             "buy a sandwich";
         else
             "buy half a sandwich";
 
-        if (playScreen.player.z < 0)
-            display.writeCenter('you escape the mines with enough dice to $outcome. ($points total sides)', 2, fg);
+        var partyName = playScreen.player.name;
+        if (playScreen.world.heroParty.length == 1)
+            partyName = "just " + partyName;
         else
-            display.writeCenter('you died in the mines with enough dice to $outcome. ($points total sides)', 2, fg);
+            partyName += " and " + playScreen.player.world.heroParty.length + " others";
 
+        if (playScreen.player.z < 0)
+            display.writeCenter('you escaped with enough dice to $outcome. ($points total sides)', 2, fg);
+        else
+            display.writeCenter('you died with enough dice to $outcome. ($points total sides)', 2, fg);
+
+        var entry = { points: points, text: '${Date.now().toString()} - $partyName' };
         var so = loadScores();
-        so.data.scores.push({ points: points, text: "testing" });
+        var insertAt = -0;
+        for (i in 0 ... so.data.scores.length) {
+            if (so.data.scores[i].points < points) {
+                insertAt = i;
+                break;
+            }
+        }
+        if (insertAt == -1)
+            so.data.scores.push(entry);
+        else
+            so.data.scores.insert(insertAt, entry);
         saveScores(so);
 
+        var x = 15;
         var y = 6;
+        var listed = 0;
         for (score in cast(so.data.scores, Array<Dynamic>)) {
-            display.writeCenter(score.points + "  " + score.text, y++, fg);
+            display.write(score.text, x, y, fg);
+            display.write(StringTools.lpad(score.points, ' ', 5) + ' sides', x + 55, y, fg);
+            y++;
+            if (++listed == 10)
+                break;
         }
 
-        display.writeCenter("-- press [enter] to restart --", 4, fg);
+        y++;
+        display.writeCenter("-- press [enter] to restart --", y++, fg);
         display.update();
     }
 
@@ -77,6 +101,7 @@ class EndScreen extends Screen {
     private function saveScores(so:SharedObject):Void {
         try
         {
+            //so.data.scores = new Array<{ points:Int, text:String }>();
             so.flush();
         }
         catch (e: Dynamic) {

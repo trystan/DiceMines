@@ -10,8 +10,8 @@ class Creature {
     public var x:Int;
     public var y:Int;
     public var z:Int;
-    public var vx:Int;
-    public var vy:Int;
+    public var vx:Int = 0;
+    public var vy:Int = 0;
     public var glyph:String;
     public var name:String;
     public var fullName:String;
