@@ -26,7 +26,7 @@ class WorldGenScreen extends Screen {
             { name:" smoothing heightmaps", func:smooth },
             { name:" normalizing heightmaps", func:normalize },
             { name:" adding pillars", func:addPillars },
-            { name:" carveing floors", func:carveFloors },
+            { name:" carving floors", func:carveFloors },
             { name:" adding world tiles", func:makeTiles },
             { name:" adding water", func:addWater },
             { name:" adding lava", func:addLava },

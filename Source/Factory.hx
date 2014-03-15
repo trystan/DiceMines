@@ -139,13 +139,13 @@ class Factory {
                 var forgedItem:Item = null;
                 switch (Math.floor(Math.random() * 3)) {
                     case 0:
-                        c.meleeWeapon = addStatBonusToItem(rangedWeapon());
+                        c.meleeWeapon = addStatBonusToItem(addAbilityBonusToItem(rangedWeapon()));
                         c.meleeWeapon.name = c.name + "'s sword";
                     case 1:
-                        c.rangedWeapon = addStatBonusToItem(rangedWeapon());
+                        c.rangedWeapon = addStatBonusToItem(addAbilityBonusToItem(rangedWeapon()));
                         c.rangedWeapon.name = c.name + "'s bow";
                     default:
-                        c.armor = addStatBonusToItem(armor());
+                        c.armor = addStatBonusToItem(addAbilityBonusToItem(armor()));
                         c.armor.name = c.name + "'s armor";
                 }
                 return "dice smith";
@@ -456,6 +456,9 @@ class Factory {
     }
 
     public static function addAbilityBonusToItem(item:Item):Item {
+        if (item.onHitAbility != null)
+            return item;
+
         var modifier = "";
         switch (Math.floor(Math.random() * 6)) {
             case 0: item.onHitAbility = new KnockBackAbility(); modifier = " of knock back";

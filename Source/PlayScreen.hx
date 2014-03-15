@@ -28,7 +28,7 @@ class PlayScreen extends Screen {
         on("down left", move, { x:-1, y:1, z:0 });
         on("down right", move, { x:1, y:1, z:0 });
         on(".", move, { x:0,  y:0,  z:0  });
-        on("@", enter, new CharacterInfoScreen(this, player));
+        on("v", enter, new CharacterInfoScreen(this, world.heroParty));
         on("keypress", doAction);
         on("tick", animate);
         on("draw", draw);
@@ -206,7 +206,7 @@ class PlayScreen extends Screen {
 
         var x = 1;
         y = 1;
-        display.write('[@] view ${player.name}', x, y++, fg, bg);
+        display.write('[v]iew party', x, y++, fg, bg);
         var item = world.getItem(player.x, player.y, player.z);
         if (item == null)
             y++;

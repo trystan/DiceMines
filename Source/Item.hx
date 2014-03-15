@@ -43,7 +43,7 @@ class Item {
         if (parts.length == 0)
             return name;
         else
-            return '$name (${parts.join(", ")})';
+            return '$name (${parts.join(", ").toLowerCase()})';
     }
 
     public function onHit(owner:Creature, other:Creature):Void {
