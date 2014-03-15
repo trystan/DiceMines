@@ -21,57 +21,10 @@ class Factory {
         return (isFemale ? femaleNames[Math.floor(Math.random() * femaleNames.length)] : maleNames[Math.floor(Math.random() * maleNames.length)]) + " " + lastNames[Math.floor(Math.random() * lastNames.length)];
     }
 
-    public static function hero(isPlayer:Bool):Creature {
-        var c = new Creature("@", "ally", 0, 0, 0);
-        c.name = name(c.gender == "f");
-        c.fullName = c.name;
+    public static function hero():Creature {
+        var gender = Math.random() < 0.5 ? "m" : "f";
+        var c = new Creature("@", name(gender == "f"), 0, 0, 0, gender);
         c.light = new Shadowcaster();
-
-        if (isPlayer)
-            c.abilities.push(ability("explosion"));
-
-        var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
-        var potentialAbilityNames = new Array<String>();
-        switch (Math.floor(Math.random() * 5)) {
-            case 0: // melee
-                c.maxHp += Dice.roll("2d2+2");
-                c.accuracyStat = Dice.add(c.accuracyStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                c.damageStat = Dice.add(c.damageStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                c.meleeWeapon = meleeWeapon();
-                if (Math.random() < 0.5)
-                    c.armor = armor();
-                potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "disarming attack", "rapid attack", "intimidate"];
-            case 1: // ranged
-                c.maxHp += Dice.roll("2d2+2");
-                c.accuracyStat = Dice.add(c.accuracyStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                c.damageStat = Dice.add(c.damageStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                c.rangedWeapon = rangedWeapon();
-                if (Math.random() < 0.25)
-                    c.armor = armor();
-                potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "wounding attack"];
-            case 2: // magic
-                potentialAbilityNames = ["Jump", "magic missiles", "orb of pain", "explosion"];
-                c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-                c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-                c.gainDice(10);
-            case 3: // piety
-                potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
-                c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-                c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-                c.gainDice(5);
-            case 4: // stealth
-                c.evasionStat = Dice.add(c.evasionStat, Dice.add(bonuses[Math.floor(Math.random() * bonuses.length)], bonuses[Math.floor(Math.random() * bonuses.length)]));
-                potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak", "soothe"];
-                c.gainDice(3);
-        }
-
-        c.maxHp += Dice.roll("2d6+0") - 2;
-        c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-        c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-        c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-        c.resistanceStat = Dice.add(c.resistanceStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-        c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-        c.gainDice(Dice.roll("1d4+0"));
 
         if (Math.random() < 0.1)
             c.meleeWeapon = meleeWeapon();
@@ -80,10 +33,187 @@ class Factory {
         if (Math.random() < 0.1)
             c.armor = armor();
 
-        var amount = 3;
-        if (Math.random() < 0.25)
-            amount++;
-        while (c.abilities.length < amount) {
+        var dad = createParent(c);
+        var mom = createParent(c);
+        var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and " + mom + ".");
+        c.about = c.name + birth + " " + c.about;
+
+        addHistory(c, 3);
+
+        c.maxHp += Dice.roll("1d5+0");
+        var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
+        c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.resistanceStat = Dice.add(c.resistanceStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        c.gainDice(Dice.roll("1d5+0"));
+
+        var descriptors = [];
+        if (Math.random() < 0.25) {
+            descriptors.push('has good luck');
+            c.accuracyStat = Dice.add(c.accuracyStat, "0d0+2");
+            c.damageStat = Dice.add(c.damageStat, "0d0+2");
+            c.evasionStat = Dice.add(c.evasionStat, "0d0+2");
+            c.resistanceStat = Dice.add(c.resistanceStat, "0d0+2");
+            c.pietyStat = Dice.add(c.pietyStat, "0d0+2");
+        }
+
+        if (descriptors.length > 0)
+            c.addHistory(c.getSubjectPronoun() + " " + descriptors.join(", ") + ".");
+
+        c.hp = c.maxHp;
+
+        var traits = [];
+
+        if (Math.random() < 0.33) {
+            traits.push("likes traveling");
+            c.lore += 0.10;
+            c.extroversion += 0.10;
+        }
+
+        if (Math.random() < 0.33) {
+            traits.push("likes reading");
+            c.lore += 0.10;
+            c.extroversion -= 0.10;
+        }
+
+        if (Math.random() < 0.33) {
+            traits.push("likes adventuring");
+            c.lore += 0.10;
+            c.mood += 0.10;
+        }
+
+        if (c.extroversion < 0.10)
+            traits.push("is very quiet");
+        else if (c.extroversion < 0.33)
+            traits.push("is quiet");
+        else if (c.extroversion > 0.66)
+            traits.push("is talkative");
+        else if (c.extroversion > 0.90)
+            traits.push("is very talkative");
+
+        if (c.greed < 0.10)
+            traits.push("doesn't care about things");
+        else if (c.greed < 0.33)
+            traits.push("doesn't like having lots of things");
+        else if (c.greed > 0.66)
+            traits.push("likes having lots of things");
+        else if (c.greed > 0.90)
+            traits.push("has been called greedy");
+
+        if (c.mood < 0.10)
+            traits.push("is often in a bad mood");
+        else if (c.mood < 0.33)
+            traits.push("is sometimes in a bad mood");
+        else if (c.mood > 0.66)
+            traits.push("is sometimes in a good mood");
+        else if (c.mood > 0.90)
+            traits.push("is often in a good mood");
+
+        if (c.lore > 0.90)
+            traits.push("knows a lot about the world");
+        else if (c.lore > 0.70)
+            traits.push("knows many things about the world");
+        else if (c.lore > 0.50)
+            traits.push("knows some things about the world");
+
+        var direction = cast(c.ai, AllyAi).forwardMultiplier > 0 ? "ahead of" : "behind";
+        var distance = cast(c.ai, AllyAi).favoredDistance;
+        if (distance < 4)
+            traits.push('prefers to stay near the center of the group');
+        else if (distance > 5)
+            traits.push('prefers to stay $direction the group');
+        else if (distance > 7)
+            traits.push('prefers to stay far $direction the group');
+
+        if (traits.length > 0)
+            c.addHistory(c.getSubjectPronoun() + " " + traits.join(", ") + ".");
+
+        return c;
+    }
+
+    private static function createParent(c:Creature):String {
+        switch (Math.floor(Math.random() * 10)) {
+            case 0: 
+                var forgedItem:Item = null;
+                switch (Math.floor(Math.random() * 3)) {
+                    case 0:
+                        c.meleeWeapon = addStatBonusToItem(rangedWeapon());
+                        c.meleeWeapon.name = c.name + "'s sword";
+                    case 1:
+                        c.rangedWeapon = addStatBonusToItem(rangedWeapon());
+                        c.rangedWeapon.name = c.name + "'s bow";
+                    default:
+                        c.armor = addStatBonusToItem(armor());
+                        c.armor.name = c.name + "'s armor";
+                }
+                return "dice smith";
+            case 1: 
+                addHistory(c, 1);
+                return "adventurer";
+            case 2: 
+                c.gainDice(Dice.roll("5d5+5"));
+                return "aristocrat";
+            default:
+                return "dice farmer";
+        }
+    }
+
+    private static function addHistory(c:Creature, years:Int):Void {
+        var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
+        var potentialAbilityNames = new Array<String>();
+        var path = Math.floor(Math.random() * 5);
+        var history = "";
+        for (i in 0 ... years) {
+            if (Math.random() < 0.2)
+                path = Math.floor(Math.random() * 5);
+            switch (path) {
+                case 0: // melee
+                    history = '${c.getSubjectPronoun()} got in fights as a kid.';
+                    c.maxHp += Dice.roll("2d2+0");
+                    c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    if (c.meleeWeapon == null)
+                        c.meleeWeapon = meleeWeapon();
+                    if (c.armor == null && Math.random() < 0.25)
+                        c.armor = armor();
+                    potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "disarming attack", "rapid attack", "intimidate"];
+                case 1: // ranged
+                    history = '${c.getSubjectPronoun()} wanted to be a hunter as a kid.';
+                    c.maxHp += Dice.roll("2d2+0");
+                    c.accuracyStat = Dice.add(c.accuracyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.damageStat = Dice.add(c.damageStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    if (c.rangedWeapon == null)
+                        c.rangedWeapon = addAbilityBonusToItem(rangedWeapon());
+                    if (c.armor == null && Math.random() < 0.25)
+                        c.armor = armor();
+                    potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "wounding attack"];
+                case 2: // magic
+                    history = '${c.getSubjectPronoun()} liked magic as a kid.';
+                    potentialAbilityNames = ["Jump", "magic missiles", "orb of pain", "explosion"];
+                    c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.gainDice(3);
+                case 3: // piety
+                    history = '${c.getSubjectPronoun()} liked myths as a kid.';
+                    potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
+                    c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.gainDice(1);
+                case 4: // stealth
+                    history = '${c.getSubjectPronoun()} got into trouble as a kid.';
+                    c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak", "soothe"];
+                    c.gainDice(1);
+            }
+        }
+
+        c.addHistory(history);
+
+        var tries = 0;
+        while (tries++ < years) {
             var candidate = ability(potentialAbilityNames[Math.floor(Math.random() * potentialAbilityNames.length)]);
             var char = candidate.name.charAt(0);
             var bad = false;
@@ -95,10 +225,6 @@ class Factory {
                 continue;
             c.abilities.push(candidate);
         }
-
-        c.hp = c.maxHp;
-
-        return c;
     }
 
     private static function maybeBig(c:Creature, z:Int):Creature {

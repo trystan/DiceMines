@@ -7,17 +7,19 @@ class WorldGenScreen extends Screen {
     private var fg:Int;
 
     private var world:World;
+    private var party:Array<Creature>;
 
     private var steps:Array<{ name:String, func:Dynamic }>;
 
-    public function new() {
+    public function new(party:Array<Creature>) {
         super();
+
+        this.party = party;
 
         fg = Color.hsv(240, 10, 90).toInt();
 
         steps = [
             { name:"-- DiceMiner worldgen --", func:function() { } },
-            { name:" initializing definitions", func:Factory.init },
             { name:" initializing world", func:initWorld },
             { name:" initializing world heightmaps", func:initHeights },
             { name:" fluctuating heightmaps", func:addFluctuations },
@@ -32,8 +34,7 @@ class WorldGenScreen extends Screen {
             { name:" adding corridors", func:addCorridors },
             { name:" removing diagonals", func:removeDiagonals },
             { name:" adding stairs", func:addStairs },
-            { name:" adding player", func:addPlayer },
-            { name:" adding allies", func:addAllies },
+            { name:" adding hero's party", func:addParty },
             { name:" adding creatures", func:addCreatures },
             { name:" adding items", func:addItems },
             { name:" adding dice", func:addDice },
@@ -84,31 +85,25 @@ class WorldGenScreen extends Screen {
 #end
     }
 
-    private function addPlayer():Void {
-        var player = Factory.hero(true);
-        world.player = player;
-        world.addCreature(player);
+    private function addParty():Void {
+        var cx = 0;
+        var cy = 0;
         do {
-            player.x = Math.floor(Math.random() * (world.tiles.width - 20) + 10);
-            player.y = Math.floor(Math.random() * (world.tiles.height - 20) + 10);
-        } while(world.tiles.get(player.x, player.y, player.z) != world.tile_floor);
-        player.update();
-    }
-
-    private function addAllies():Void {
-        var total = Dice.roll("2d4+0");
-        for (i in 0 ... total) {
-            var ally = Factory.hero(false);
+            cx = Math.floor(Math.random() * world.tiles.width - 20) + 10;
+            cy = Math.floor(Math.random() * world.tiles.width - 20) + 10;
+        } while(world.tiles.get(cx, cy, 0) != world.tile_floor);
+        
+        for (ally in party) {
             world.addCreature(ally);
             do {
-                ally.x = world.player.x + Math.floor(Math.random() * 11) - 5;
-                ally.y = world.player.y + Math.floor(Math.random() * 11) - 5;
+                ally.x = cx + Math.floor(Math.random() * 11) - 5;
+                ally.y = cy + Math.floor(Math.random() * 11) - 5;
             } while(world.tiles.get(ally.x, ally.y, ally.z) != world.tile_floor);
             ally.update();
         }
         var hue = Math.random() * 360;
-        var hueOffset = 360.0 / (world.heroParty.length+1);
-        for (hero in world.heroParty) {
+        var hueOffset = 360.0 / (party.length+1);
+        for (hero in party) {
             hero.color = Color.hsv((hue += hueOffset) % 360, 66, 50);
         }
     }

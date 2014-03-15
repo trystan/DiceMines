@@ -13,9 +13,7 @@ class EndScreen extends Screen {
 
         this.playScreen = playScreen;
 
-        on("enter", function():Void { 
-            switchTo(new WorldGenScreen());
-        });
+        on("enter", switchTo, new SelectPartyScreen());
         on("draw", draw);
     }
 

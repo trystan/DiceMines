@@ -120,8 +120,11 @@ class World {
     public function addCreature(creature:Creature):Void {
         creature.world = this;
         creatures.push(creature);
-        if (creature.isHero())
-            heroParty.push(creature);
+        if (creature.isHero()) {
+            heroParty.push(creature); 
+            if (player == null)
+                player = creature;
+        }
     }
 
     public function getCreature(x:Int, y:Int, z:Int):Creature {

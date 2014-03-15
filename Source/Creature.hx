@@ -18,6 +18,14 @@ class Creature {
     public var color:Color;
     public var ai:NpcAi;
 
+    public var extroversion:Float;
+    public var greed:Float;
+    public var mood:Float;
+    public var lore:Float;
+
+    public var about:String;
+    public function addHistory(line:String):Void { about += " " + line; }
+
     public function isHero():Bool { return glyph == "@"; }
 
     public var gender:String;
@@ -94,12 +102,18 @@ class Creature {
 
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int, gender:String = null) {
         this.glyph = glyph;
-        this.name = name;
+        this.name = name.split(" ")[0];
         this.fullName = isHero() ? name : ("the " + name);
         this.gender = gender == null ? (Math.random() < 0.5 ? "m" : "f") : gender;
         this.x = x;
         this.y = y;
         this.z = z;
+        this.about = "";
+
+        extroversion = Math.random();
+        greed = Math.random();
+        mood = Math.random();
+        lore = Math.random();
 
         if (isHero())
             new AllyAi(this);
@@ -118,6 +132,14 @@ class Creature {
         pietyStat = "2d2+0";
 
         gainDice(Dice.roll("1d4+1"));
+    }
+
+    public function getSubjectPronoun():String {
+        switch (gender) {
+            case "m": return "he";
+            case "f": return "she";
+            default: return "it";
+        }
     }
 
     public function getPronoun():String {
@@ -170,7 +192,7 @@ class Creature {
     }
 
     public function say(text:String) {
-        if (isHero() && isAlive && this != world.player)
+        if (isHero() && isAlive && this != world.player && Math.random() < extroversion)
             world.addMessage(name + ' says "$text"');
     }
 

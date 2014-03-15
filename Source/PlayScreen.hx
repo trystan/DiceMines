@@ -191,7 +191,7 @@ class PlayScreen extends Screen {
                 continue;
 
             var labelColor = c == world.player ? playerColor.toInt() : c.color.toInt();
-            var label = '${c.name} ${c.hp}/${c.maxHp} (lvl ${c.z})';
+            var label = '${c.fullName} ${c.hp}/${c.maxHp} (lvl ${c.z})';
             display.write(label, display.widthInCharacters - label.length - 1, y++, labelColor, bg);
             var characterMelee = c.meleeWeapon == null ? "no sword" : c.meleeWeapon.name;
             display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);

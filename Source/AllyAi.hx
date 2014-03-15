@@ -6,8 +6,8 @@ import knave.Bresenham;
 
 class AllyAi extends NpcAi {
     private var strategy:Int;
-    private var favoredDistance:Int;
-    private var forwardMultiplier:Int;
+    public var favoredDistance:Int;
+    public var forwardMultiplier:Int;
 
     public function new(self:Creature) {
         super(self);
