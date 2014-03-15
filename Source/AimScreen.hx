@@ -10,13 +10,18 @@ class AimScreen extends Screen {
     private var targetY:Int;
     private var maxDistance:Int;
     private var isOk:Bool = true;
+    private var prompt:String;
+    private var radius:Int;
 
-    public function new(player:Creature, maxDistance:Int, callbackFunction: Int -> Int -> Void) {
+    public function new(player:Creature, maxDistance:Int, callbackFunction: Int -> Int -> Void, prompt:String = null, radius:Int = 0) {
         super();
         this.world = player.world;
         this.player = player;
         this.maxDistance = maxDistance;
         this.callbackFunction = callbackFunction;
+        this.prompt = prompt;
+        this.radius = radius;
+
         targetX = player.x;
         targetY = player.y;
 
@@ -50,8 +55,11 @@ class AimScreen extends Screen {
     
     private function draw(display:AsciiDisplay):Void {
         world.playScreen.draw(display);
-
         var fg = new Color(250, 250, 250).toInt();
+
+        //if (prompt != null)
+        //    display.writeCenter(prompt, 2, fg, new Color(0,0,0).toInt());
+
         var glyph = String.fromCharCode(250);
         var points = Bresenham.line(player.x, player.y, targetX, targetY).points;
         if (points.length > 0)
@@ -66,7 +74,18 @@ class AimScreen extends Screen {
         for (p in points)
             display.write(glyph, p.x - vx, p.y - vy, fg);
 
-        display.write("x", targetX - vx, targetY - vy, fg);
+        if (radius == 0) {
+            display.write("x", targetX - vx, targetY - vy, fg);
+        } else {
+            for (rx in -radius ... radius+1)
+            for (ry in -radius ... radius+1) {
+                if (rx*rx + ry*ry > radius*radius)
+                    continue;
+                display.write("x", targetX - vx + rx, targetY - vy + ry, fg);
+            }
+            display.write("x", targetX - vx, targetY - vy, fg);
+        }
+
         display.update();
     }
 }

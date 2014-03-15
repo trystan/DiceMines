@@ -27,6 +27,9 @@ class Factory {
         c.fullName = c.name;
         c.light = new Shadowcaster();
 
+        if (isPlayer)
+            c.abilities.push(ability("explosion"));
+
         var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
         var potentialAbilityNames = new Array<String>();
         switch (Math.floor(Math.random() * 5)) {
@@ -451,7 +454,7 @@ class JumpAbility extends Ability {
             var roll = Dice.rollExact(number, sides, 0);
             self.world.playScreen.enter(new AimScreen(self, roll, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, roll, tx, ty);
-            }));
+            }, 'You rolled a ${roll}. Escape to cancel (and keep your dice) or jump up to $roll spaces away.'));
         }));
     }
 
@@ -865,10 +868,10 @@ class ExplosionAbility extends Ability {
 
     override public function playerUsage(self:Creature):Void {
         self.world.playScreen.enter(new SelectDiceScreen(self, "How large of an explosion do you want?", function(number:Int, sides:Int):Void {
-            var radius = Dice.rollExact(number, sides, 0);
-            self.world.playScreen.enter(new AimScreen(self, 20, function(tx:Int, ty:Int):Void {
-                doIt(self, number, sides, radius, tx, ty);
-            }));
+            var roll = Dice.rollExact(number, sides, 0);
+            self.world.playScreen.enter(new AimScreen(self, roll * 2, function(tx:Int, ty:Int):Void {
+                doIt(self, number, sides, roll, tx, ty);
+            }, 'You rolled a ${roll}. Escape to cancel (and keep your dice) or select an area up to ${roll*2} spaces away.', roll));
         }));
     }
 
@@ -1142,10 +1145,10 @@ class SmiteAbility extends Ability {
 
     override public function playerUsage(self:Creature):Void {
         self.world.playScreen.enter(new SelectDiceScreen(self, "How far from you do you want to smite?", function(number:Int, sides:Int):Void {
-            var radius = Dice.rollExact(number, sides, 0);
-            self.world.playScreen.enter(new AimScreen(self, radius, function(tx:Int, ty:Int):Void {
+            var roll = Dice.rollExact(number, sides, 0);
+            self.world.playScreen.enter(new AimScreen(self, roll, function(tx:Int, ty:Int):Void {
                 doIt(self, number, sides, tx, ty);
-            }));
+            }, 'You rolled a ${roll}. Escape to cancel (and keep your dice) or smite up to $roll spaces away.'));
         }));
     }
 

@@ -143,6 +143,10 @@ class Creature {
         world.addMessage('$name is revealed');
     }
 
+    public function distanceTo(other:Creature):Int {
+        return Math.floor(Math.max(Math.abs(x-other.x), Math.abs(y-other.y)) + Math.abs(z-other.z));
+    }
+
     public function canSee(other:Creature):Bool {
         if (sleepCounter > 0 || other.z != z)
             return false;

@@ -40,16 +40,23 @@ class AllyAi extends NpcAi {
             return;
         }
 
-        if (enemy != null) {
+        if (enemy != null && self.distanceTo(enemy) > favoredDistance * 2)
+            enemy = null;
+
+        if (enemy != null && (!world.player.isVisible() || self.distanceTo(world.player) < favoredDistance)) {
             if (useAbility())
                 return;
 
-            if (self.rangedWeapon != null) {
-                var clearShot = false;
+            if (self.rangedWeapon != null && self.distanceTo(enemy) < 12) {
+                var clearShot = true;
                 for (p in Bresenham.line(self.x, self.y, enemy.x, enemy.y).points) {
+                    if (world.blocksMovement(p.x, p.y, p.z))
+                        clearShot = false;
                     var other = world.getCreature(p.x, p.y, self.z);
                     if (other != null && other != self && !isEnemy(other))
                         clearShot = false;
+                    if (!clearShot)
+                        break;
                 }
 
                 if (clearShot)
@@ -67,6 +74,10 @@ class AllyAi extends NpcAi {
     }
 
     private function stayNearPlayer():Void {
+        if (!world.player.isVisible()) {
+            self.wander();
+            return;
+        }
         // trace('${self.name} ${self.x},${self.y},${self.z} $path');
         var targetPoint = new IntPoint(world.player.x, world.player.y, world.player.z);
         var d = 0;

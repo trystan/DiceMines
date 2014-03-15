@@ -193,13 +193,13 @@ class PlayScreen extends Screen {
             var labelColor = c == world.player ? playerColor.toInt() : c.color.toInt();
             var label = '${c.name} ${c.hp}/${c.maxHp} (lvl ${c.z})';
             display.write(label, display.widthInCharacters - label.length - 1, y++, labelColor, bg);
-            var characterMelee = c.meleeWeapon == null ? "- no sword -" : c.meleeWeapon.name;
+            var characterMelee = c.meleeWeapon == null ? "no sword" : c.meleeWeapon.name;
             display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);
 
-            var characterRanged = c.rangedWeapon == null ? "-  no bow  -" : c.rangedWeapon.name;
+            var characterRanged = c.rangedWeapon == null ? "no bow" : c.rangedWeapon.name;
             display.write(characterRanged, display.widthInCharacters - characterRanged.length - 1, y++, fg, bg);
 
-            var characterArmor = c.armor == null ? "- no armor -" : c.armor.name;
+            var characterArmor = c.armor == null ? "no armor" : c.armor.name;
             display.write(characterArmor, display.widthInCharacters - characterArmor.length - 1, y++, fg, bg);
             y++;
         }

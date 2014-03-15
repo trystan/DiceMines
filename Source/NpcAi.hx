@@ -70,11 +70,14 @@ class NpcAi {
         if (enemy != null && enemy.isAlive && self.canSee(enemy) && Math.random() < 0.75)
             return enemy;
 
+        if (enemy != null && !enemy.isAlive)
+            enemy = null;
+
         var closest:Creature = null;
         var closestDist = 10000.0;
         var fromPoint = new IntPoint(self.x, self.y, self.z);
 
-        var potentials = self.isHero() ? world.heroParty : world.creatures;
+        var potentials = self.isHero() ? world.creatures: world.heroParty;
 
         for (c in potentials) {
             if (self == c || !isEnemy(c) || !self.canSee(c))

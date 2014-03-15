@@ -115,7 +115,7 @@ class WorldGenScreen extends Screen {
 
     private function addCreatures():Void {
         for (z in 0 ... world.tiles.depth) {
-            for (i in 0 ... 16 + Math.floor(z/2)) {
+            for (i in 0 ... 20 + z) {
                 var x = 0;
                 var y = 0;
                 do {
@@ -139,7 +139,7 @@ class WorldGenScreen extends Screen {
 
     private function addDice():Void {
         for (z in 0 ... world.tiles.depth) {
-            for (i in 0 ... 10 + z) {
+            for (i in 0 ... 10 + z * 3) {
                 var x = 0;
                 var y = 0;
                 do {
@@ -361,7 +361,7 @@ class WorldGenScreen extends Screen {
 
     private function addCorridors():Void {
         for (z in 0 ... world.heights.depth) {
-            for (i in 0 ... 20) {
+            for (i in 0 ... 40) {
                 var x = Math.floor(Math.random() * world.heights.width);
                 var y = Math.floor(Math.random() * world.heights.height);
                 var ox = x;
