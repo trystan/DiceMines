@@ -2,6 +2,7 @@ package;
 
 import knave.Grid3;
 import knave.Text;
+import knave.IntPoint;
 
 class World {
     public var playScreen:PlayScreen;
@@ -25,6 +26,7 @@ class World {
     public var creatures:Array<Creature>;
     public var heroParty:Array<Creature>;
     public var items:Map<String, Item>;
+    public var itemsList:Array<{ position:IntPoint, item:Item }>;
     public var messages:Array<String>;
     public var projectiles:Array<Projectile>;
     public var effects:Array<{ countdown:Int, func:Int -> Void }>;
@@ -42,6 +44,7 @@ class World {
         creatures = new Array<Creature>();
         heroParty = new Array<Creature>();
         items = new Map<String, Item>();
+        itemsList = new Array<{ position:IntPoint, item:Item }>();
     }
 
     public function update():Void {
@@ -100,6 +103,7 @@ class World {
 
     public function addItem(item:Item, x:Int, y:Int, z:Int):Void {
         items.set('$x,$y,$z', item);
+        itemsList.push({ position:new IntPoint(x,y,z), item: item });
     }
 
     public function getItem(x:Int, y:Int, z:Int):Item {
@@ -108,7 +112,17 @@ class World {
 
     public function removeItem(x:Int, y:Int, z:Int):Item {
         var item = items.get('$x,$y,$z');
-        items.remove('$x,$y,$z');
+        
+        if (item != null) {
+            items.remove('$x,$y,$z');
+            for (i in itemsList) {
+                if (i.item == item) {
+                    itemsList.remove(i);
+                    break;
+                }
+            }
+        }
+
         return item;
     }
 

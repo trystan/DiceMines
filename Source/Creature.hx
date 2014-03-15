@@ -167,12 +167,19 @@ class Creature {
     }
 
     public function canSee(other:Creature):Bool {
-        if (sleepCounter > 0 || other.z != z)
+        if (sleepCounter > 0 || other.z != z || !other.isAlive || !other.isVisible())
+            return false;
+
+        return canSeeTile(other.x, other.y, other.z);
+    }
+
+    public function canSeeTile(tx:Int, ty:Int, tz:Int):Bool {
+        if (tz != z)
             return false;
 
         if (light == null) {
             var dist = 0;
-            for (p in Bresenham.line(x, y, other.x, other.y).points) { 
+            for (p in Bresenham.line(x, y, tx, ty).points) { 
                 if (dist++ > 15)
                     return false;
                 if (world.blocksVision(p.x, p.y, z))
@@ -180,7 +187,7 @@ class Creature {
             }
             return true;
         } else {
-            return light.isLit(other.x, other.y);
+            return light.isLit(tx, ty);
         }
     }
 

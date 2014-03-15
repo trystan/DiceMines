@@ -17,6 +17,17 @@ class Item {
 
     public var type:String;
 
+    public function getValue():Int {
+        var total = 0;
+        var stats = Dice.fromString(Dice.add(Dice.add(accuracyStat, damageStat), Dice.add(Dice.add(evasionStat, resistanceStat), pietyStat)));
+        total += stats.number * stats.sides + stats.bonus;
+
+        if (onHitAbility != null)
+            total = Math.floor(total * 1.5);
+
+        return total;
+    }
+
     public function new(glyph:String, color:Color, type:String, name:String) {
         this.glyph = glyph;
         this.color = color;

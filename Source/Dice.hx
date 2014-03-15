@@ -1,60 +1,59 @@
 package;
 
 class Dice {
+    public var number:Int;
+    public var sides:Int;
+    public var bonus:Int;
 
-    public static function rollExact(number:Int, sides:Int, bonus:Int):Int {
+    public function new(number:Int, sides:Int, bonus:Int) {
+        if (sides < 0) {
+            sides = Math.floor(Math.abs(sides));
+            number = -Math.floor(Math.abs(number));
+        }
+
+        this.number = number;
+        this.sides = sides;
+        this.bonus = bonus;
+    }
+
+    public function plus(other:Dice):Dice {
+        return new Dice(number + other.number, sides + other.sides, bonus + other.bonus);
+    }
+
+    public function minus(other:Dice):Dice {
+        return new Dice(number - other.number, sides - other.sides, bonus - other.bonus);
+    }
+
+    public function toString():String {
+        return number + "d" + sides + "+" + bonus;
+    }
+
+    public function rollAll():Int {
         var total = 0;
         for (i in 0 ... Math.floor(Math.abs(number)))
             total += Math.floor(Math.random() * sides) + (sides < 0 ? -1 : 1);
         return total * (number < 0 ? -1 : 1) + bonus;
     }
 
+    public static function fromString(dice:String):Dice {
+        return new Dice(Std.parseInt(dice.split("d")[0]),
+                        Std.parseInt(dice.split("d")[1].split("+")[0]),
+                        Std.parseInt(dice.split("+")[1]));
+    }
+
+    public static function rollExact(number:Int, sides:Int, bonus:Int):Int {
+        return new Dice(number, sides, bonus).rollAll();
+    }
+
     public static function add(a:String, b:String):String {
-        var numberA = Std.parseInt(a.split("d")[0]);
-        var sidesA = Std.parseInt(a.split("d")[1].split("+")[0]) * (numberA < 0 ? -1 : 1);
-        var bonusA = Std.parseInt(a.split("+")[1]);
-
-        var numberB = Std.parseInt(b.split("d")[0]);
-        var sidesB = Std.parseInt(b.split("d")[1].split("+")[0]) * (numberB < 0 ? -1 : 1);
-        var bonusB = Std.parseInt(b.split("+")[1]);
-
-        var numberC = numberA + numberB;
-        var sidesC = sidesA + sidesB;
-        var bonusC = bonusA + bonusB;
-
-        if (sidesC < 0) {
-            sidesC = Math.floor(Math.abs(sidesC));
-            numberC = -Math.floor(Math.abs(numberC));
-        }
-
-        return numberC + "d" + sidesC + "+" + bonusC;
+        return fromString(a).plus(fromString(b)).toString();
     }
 
     public static function subtract(a:String, b:String):String {
-        var numberA = Std.parseInt(a.split("d")[0]);
-        var sidesA = Std.parseInt(a.split("d")[1].split("+")[0]) * (numberA < 0 ? -1 : 1);
-        var bonusA = Std.parseInt(a.split("+")[1]);
-
-        var numberB = Std.parseInt(b.split("d")[0]);
-        var sidesB = Std.parseInt(b.split("d")[1].split("+")[0]) * (numberB < 0 ? -1 : 1);
-        var bonusB = Std.parseInt(b.split("+")[1]);
-
-        var numberC = numberA - numberB;
-        var sidesC = sidesA - sidesB;
-        var bonusC = bonusA - bonusB;
-
-        if (sidesC < 0) {
-            sidesC = Math.floor(Math.abs(sidesC));
-            numberC = -Math.floor(Math.abs(numberC));
-        }
-
-        return numberC + "d" + sidesC + "+" + bonusC;
+        return fromString(a).minus(fromString(b)).toString();
     }
 
     public static function roll(what:String):Int {
-        var number = Std.parseInt(what.split("d")[0]);
-        var sides = Std.parseInt(what.split("d")[1].split("+")[0]) * (number < 0 ? -1 : 1);
-        var bonus = Std.parseInt(what.split("+")[1]);
-        return rollExact(number, sides, bonus);
+        return fromString(what).rollAll();
     }
 }

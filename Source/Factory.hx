@@ -26,13 +26,6 @@ class Factory {
         var c = new Creature("@", name(gender == "f"), 0, 0, 0, gender);
         c.light = new Shadowcaster();
 
-        if (Math.random() < 0.1)
-            c.meleeWeapon = meleeWeapon();
-        if (Math.random() < 0.1)
-            c.rangedWeapon = rangedWeapon();
-        if (Math.random() < 0.1)
-            c.armor = armor();
-
         var dad = createParent(c);
         var mom = createParent(c);
         var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and a " + mom + ".");
@@ -138,6 +131,13 @@ class Factory {
 
         if (traits.length > 0)
             c.addHistory(c.getSubjectPronoun() + " " + Text.andList(traits) + ".");
+
+        if (c.meleeWeapon == null && Math.random() < 0.5)
+            c.meleeWeapon = meleeWeapon();
+        if (c.rangedWeapon == null && Math.random() < 0.5)
+            c.rangedWeapon = rangedWeapon();
+        if (c.armor == null && Math.random() < 0.5)
+            c.armor = armor();
 
         return c;
     }
@@ -262,6 +262,7 @@ class Factory {
     public static function arachnid(z:Int):Creature {
         var c = new Creature("a", "arachnid", 0, 0, 0);
         c.accuracyStat = "5d5+5";
+        c.gainDice(5);
         c.abilities.push(ability("Jump"));
         return maybeBig(c, z);
     }
@@ -528,7 +529,7 @@ class JumpAbility extends Ability {
             points.shift();
             for (p in points) {
                 var other = self.world.getCreature(p.x, p.y, self.z);
-                if (other != null && other.glyph != "@")
+                if (other != null && !self.ai.isEnemy(other))
                     isBad = true;
             }
             if (isBad)
@@ -543,7 +544,7 @@ class JumpAbility extends Ability {
         var candidate = candidates[Math.floor(Math.random() * candidates.length)];
 
         return { 
-            percent: 0.25,
+            percent: 0.5,
                func: function(self):Void {
                     doIt(self, dice.number, dice.sides, roll, candidate.x, candidate.y);
                }
@@ -909,7 +910,7 @@ class OrbOfPainAbility extends Ability {
         points.shift();
         for (p in points) {
             var other = self.world.getCreature(p.x, p.y, self.z);
-            if (other != null && other.glyph != "@")
+            if (other != null && self.ai.isEnemy(other))
                 return { percent: 0.0, func: function(self):Void { } };
         }
 
@@ -1021,7 +1022,7 @@ class IntimidateAbility extends Ability {
 
     private function apply(self:Creature, duration:Int):Void {
         for (c in self.world.creatures) {
-            if (c.canSee(self) && c.glyph != "@") {
+            if (c.canSee(self) && self.ai.isEnemy(c)) {
                 c.fearCounter = duration;
             }
         }
@@ -1053,7 +1054,7 @@ class SootheAbility extends Ability {
         var duration = Dice.rollExact(number, sides, 0);
         self.world.addMessage('${self.fullName} uses ${number}d$sides to sooth enemies for $duration turns');
         for (c in self.world.creatures) {
-            if (c.canSee(self) && c.glyph != "@") {
+            if (c.canSee(self) && c.ai.isEnemy(self)) {
                 c.sleepCounter = duration;
             }
         }
