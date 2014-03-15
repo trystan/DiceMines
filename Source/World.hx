@@ -120,7 +120,7 @@ class World {
     public function addCreature(creature:Creature):Void {
         creature.world = this;
         creatures.push(creature);
-        if (creature.glyph == "@")
+        if (creature.isHero())
             heroParty.push(creature);
     }
 
@@ -148,7 +148,7 @@ class World {
     }
 
     public function canGoDown(x:Int, y:Int, z:Int):Bool {
-        return tiles.get(x, y, z) == tile_stairs_down;
+        return tiles.get(x, y, z) == tile_stairs_down || isEmptySpace(x, y, z);
     }
 
     public function canGoUp(x:Int, y:Int, z:Int):Bool {

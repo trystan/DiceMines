@@ -17,6 +17,8 @@ class Creature {
     public var fullName:String;
     public var ai:NpcAi;
 
+    public function isHero():Bool { return glyph == "@"; }
+
     public var gender:String;
     public var hp:Int = 30;
     public var maxHp:Int = 30;
@@ -92,13 +94,13 @@ class Creature {
     public function new(glyph:String, name:String, x:Int, y:Int, z:Int, gender:String = null) {
         this.glyph = glyph;
         this.name = name;
-        this.fullName = glyph == "@" ? name : ("the " + name);
+        this.fullName = isHero() ? name : ("the " + name);
         this.gender = gender == null ? (Math.random() < 0.5 ? "m" : "f") : gender;
         this.x = x;
         this.y = y;
         this.z = z;
 
-        if (glyph == "@")
+        if (isHero())
             new AllyAi(this);
         else
             new EnemyAi(this);
@@ -163,7 +165,7 @@ class Creature {
     }
 
     public function say(text:String) {
-        if (glyph == "@" && isAlive && this != world.player)
+        if (isHero() && isAlive && this != world.player)
             world.addMessage(name + ' says "$text"');
     }
 
@@ -238,19 +240,35 @@ class Creature {
         if (mx==0 && my==0 && mz==0)
             return;
 
-        var other = world.getCreature(x+mx, y+my, z+mz);
-        if (other != null)
-            attack(other);
-        else if (!world.blocksMovement(x + mx, y + my, z + mz)) {
+        if (mz > 0 && world.canGoDown(x, y, z)) {
+            z += 1;
+            return;
+
+        } else if (mz < 0 && world.canGoUp(x, y, z)) {
+            z -= 1;
+            return;
+        }
+
+        mx = Math.floor(Math.max(-1, Math.min(mx, 1)));
+        my = Math.floor(Math.max(-1, Math.min(my, 1)));
+
+        var other = world.getCreature(x+mx, y+my, z);
+        if (other != null) {
+            if (ai.isEnemy(other)) {
+                attack(other);
+            } else if (other != this && other.isHero() && this == world.player) {
+                var ox = other.x;
+                var oy = other.y;
+                other.x = x;
+                other.y = y;
+                x = ox;
+                y = oy;
+            }
+        } else if (!world.blocksMovement(x + mx, y + my, z)) {
             x += mx;
             y += my;
-
             vx = mx;
             vy = my;
-            
-            if (mz == -1 && world.canGoUp(x, y, z)
-             || mz == 1 && world.canGoDown(x, y, z))
-                z += mz;
         }
     }
 
@@ -335,7 +353,7 @@ class Creature {
         for (func in effects)
             func(other, this);
 
-        if (glyph == "@" && other.glyph == "@")
+        if (isHero() && other.isHero())
             say('Careful ${other.name}!');
     }
 

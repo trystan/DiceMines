@@ -43,7 +43,7 @@ class EndScreen extends Screen {
         else if (points > 100)
             "buy better equipment";
         else if (points > 50)
-            "buy a horse";
+            "buy a lunch";
         else if (points > 25)
             "buy a sandwich";
         else

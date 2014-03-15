@@ -1,7 +1,6 @@
 package;
 
 import knave.IntPoint;
-import knave.IntPoint3;
 import knave.AStar3;
 import knave.Bresenham;
 
@@ -18,26 +17,32 @@ class AllyAi extends NpcAi {
     public function new(self:Creature) {
         super(self);
 
-        favoredDistance = Dice.roll("2d2+2");
+        favoredDistance = 4;
         strategy = Math.floor(Math.random() * 5);
     }
 
     override public function update():Void {
         world = self.world;
 
-        if (self.sleepCounter > 0) {
+        if (self.sleepCounter > 0)
             return;
-        }
+
+        trace('${self.name} ${self.x},${self.y},${self.z} $path');
+        goTo(world.player.x, world.player.y, world.player.z);
+        return;
 
         if (self.z != world.player.z) {
-            if (path == null || path.length == 0 || Math.random() < 0.1)
+            //if (path == null || path.length == 0 || Math.random() < 0.1)
                 goTo(world.player.x, world.player.y, world.player.z);
-            else
-                followPath();
+            //else
+            //    followPath();
 
         } else if (stayInGroup()) {
             return;
         }
+
+        self.wander();
+        return;
 
         enemy = nearestVisibleEnemy();
 
@@ -111,6 +116,16 @@ class AllyAi extends NpcAi {
     private function stayInGroup():Bool {
         var dist = Math.max(Math.abs(self.x-world.player.x), Math.abs(self.y-world.player.y));
         
+        if (dist < favoredDistance - 1) {
+            self.runFrom(world.player);
+            return true;
+         } else if (dist > favoredDistance + 1) {
+             goTo(world.player.x, world.player.y, world.player.z);
+             return true;
+         } else { 
+            return false;
+         }
+
         if (dist < favoredDistance + 1 && dist > favoredDistance - 1)
             return false;
 

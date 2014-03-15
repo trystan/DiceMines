@@ -1,13 +1,14 @@
 package;
 
-import knave.IntPoint3;
+import knave.IntPoint;
+import knave.AStar;
 import knave.AStar3;
 
 class NpcAi {
     public var world:World;
     public var self:Creature;
     public var enemy:Creature;
-    public var path:Array<IntPoint3>;
+    public var path:Array<IntPoint>;
 
     public function new(self:Creature) {
         this.self = self;
@@ -54,9 +55,12 @@ class NpcAi {
     }
 
     public function isEnemy(other:Creature):Bool {
-        if (self.glyph == "@" && other.glyph != "@")
+        if (other == null)
+            return false;
+
+        if (self.isHero() && other.glyph != "@")
             return true;
-        if (self.glyph != "@" && other.glyph == "@")
+        if (self.glyph != "@" && other.isHero())
             return true;
 
         return false;
@@ -68,9 +72,9 @@ class NpcAi {
 
         var closest:Creature = null;
         var closestDist = 10000.0;
-        var fromPoint = new IntPoint3(self.x, self.y, self.z);
+        var fromPoint = new IntPoint(self.x, self.y, self.z);
 
-        var potentials = self.glyph == "@" ? world.heroParty : world.creatures;
+        var potentials = self.isHero() ? world.heroParty : world.creatures;
 
         for (c in potentials) {
             if (self == c || !isEnemy(c) || !self.canSee(c))
@@ -79,7 +83,7 @@ class NpcAi {
             if (c.sleepCounter > 0)
                 continue;
 
-            var dist = fromPoint.distanceTo(new IntPoint3(c.x, c.y, c.z));
+            var dist = fromPoint.distanceTo(new IntPoint(c.x, c.y, c.z));
             if (dist > closestDist)
                 continue;
             closestDist = dist;
@@ -89,11 +93,10 @@ class NpcAi {
     }
 
     private function followPath():Void {
-        while (path != null && path.length > 0 && path[0].x == self.x && path[0].y == self.y)
+        while (path != null && path.length > 0 && path[0].x == self.x && path[0].y == self.y && path[0].z == self.z)
             path.shift();
         
-        if (path == null || path.length == 0 || Math.random() < 0.1) {
-            path = null;
+        if (path == null || path.length == 0) {
             self.wander();
             return;
         }
@@ -104,32 +107,43 @@ class NpcAi {
         if (Math.abs(mx) > 1 || Math.abs(my) > 1) {
             path = null;
             self.wander();
+        } else if (world.blocksMovement(self.x+mx, self.y+my, self.z+mz)) {
+            path = null;
         } else {
             var other = world.getCreature(self.x+mx, self.y+my, self.z+mz);
-            if (other == null || isEnemy(other))
+            if (other == null || isEnemy(other)) {
                 self.move(mx, my, mz);
-            else
+            } else {
                 path = null;
+                self.wander();
+            }
         }
     }
 
     public function goTo(tx:Int, ty:Int, tz:Int):Void {
+        var oldPath = path;
         if (path == null || path.length == 0 || path[path.length-1].x != tx || path[path.length-1].y != ty || path[path.length-1].z != tz) {
-            path = AStar3.pathTo(new IntPoint3(self.x, self.y, self.z), new IntPoint3(tx, ty, tz), function(p:IntPoint3):Array<IntPoint3> {
-                while (world.isEmptySpace(p.x, p.y, p.z))
-                    p = p.plus(new IntPoint3(0, 0, 1));
-                var ok = new Array<IntPoint3>();
-                for (p2 in p.neighbors8()) {
-                    if (world.isWalkable(p2.x, p2.y, p.z) || world.isEmptySpace(p2.x, p2.y, p2.z))
-                        ok.push(p2);
-                }
-                if (world.canGoUp(p.x, p.y, p.z))
-                    ok.push(p.plus(new IntPoint3(0, 0, -1)));
-                if (world.canGoDown(p.x, p.y, p.z))
-                    ok.push(p.plus(new IntPoint3(0, 0, 1)));
-                return ok;
-            }, 40);
-            // trace("A*3 = " + path.length);
+            if (self.z == tz) {
+                path = AStar.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, self.z), function(p:IntPoint):Bool {
+                    return world.isWalkable(p.x, p.y, p.z);
+                }, 40);
+
+            } else if (self.z != tz) {
+                path = AStar3.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, tz), function(p:IntPoint):Array<IntPoint> {
+                    while (world.isEmptySpace(p.x, p.y, p.z))
+                        p = p.plus(new IntPoint(0, 0, 1));
+                    var ok = new Array<IntPoint>();
+                    for (p2 in p.neighbors8()) {
+                        if (world.isWalkable(p2.x, p2.y, p.z) || world.isEmptySpace(p2.x, p2.y, p2.z))
+                            ok.push(p2);
+                    }
+                    if (world.canGoUp(p.x, p.y, p.z))
+                        ok.push(p.plus(new IntPoint(0, 0, -1)));
+                    if (world.canGoDown(p.x, p.y, p.z))
+                        ok.push(p.plus(new IntPoint(0, 0, 1)));
+                    return ok;
+                }, 40);
+            }
         }
 
         followPath();

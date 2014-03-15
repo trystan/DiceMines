@@ -6,20 +6,20 @@ class AStar {
 
     public var offsets:Array<Array<Int>>;
 
-    private var canEnter:Int -> Int -> Bool;
+    private var canEnter:IntPoint -> Bool;
     private var start:IntPoint;
 
-    public function new(canEnter:Int -> Int -> Bool, start:IntPoint) {
+    public function new(canEnter:IntPoint -> Bool, start:IntPoint) {
         offsets = [[ -1, 0], [0, -1], [0, 1], [1, 0], [ -1, -1], [ -1, 1], [1, -1], [1, 1]];
         this.canEnter = canEnter;
         this.start = start;
     }
 
     public function findPathTo(end:IntPoint, giveUpAfter:Int):Array<IntPoint> { 
-        if(!canEnter(end.x, end.y) || start.x == end.x && start.y == end.y)
+        if(!canEnter(end) || start.x == end.x && start.y == end.y)
             return [];
 
-        var startNode = new AStarNode(start.x, start.y, null);
+        var startNode = new AStarNode(start.x, start.y, start.z, null);
         startNode.g = 0;
         startNode.h = getHCost(start, end);
         startNode.f = startNode.g + startNode.h;
@@ -37,15 +37,15 @@ class AStar {
                 break;
 
             for (offset in offsets) {
-                var neighbor:IntPoint = new IntPoint(current.x + offset[0], current.y + offset[1]);
+                var neighbor = new IntPoint(current.x + offset[0], current.y + offset[1], current.z);
 
                 var newG:Int = getGCost(current, neighbor);
 
-                if (!canEnter(neighbor.x, neighbor.y) || getFromList(closed, neighbor) != null)
+                if (!canEnter(neighbor) || getFromList(closed, neighbor) != null)
                     continue;
 
                 if (neighbor.x == end.x && neighbor.y == end.y) {
-                    var endNode:AStarNode = new AStarNode(neighbor.x, neighbor.y, current);
+                    var endNode = new AStarNode(neighbor.x, neighbor.y, current.z, current);
                     endNode.g = newG;
                     endNode.h = getHCost(neighbor, end);
                     endNode.f = endNode.g + endNode.h;
@@ -56,7 +56,7 @@ class AStar {
                 var visited = getFromList(open, neighbor);
 
                 if(visited == null) {
-                    var newNode = new AStarNode(neighbor.x, neighbor.y, current);
+                    var newNode = new AStarNode(neighbor.x, neighbor.y, current.z, current);
                     newNode.g = newG;
                     newNode.h = getHCost(neighbor, end);
                     newNode.f = newNode.g + newNode.h;
@@ -85,7 +85,7 @@ class AStar {
 
         var steps:Array<IntPoint> = [];
         while(thisStep.x != start.x || thisStep.y != start.y) {
-            steps.push(new IntPoint(thisStep.x, thisStep.y));
+            steps.push(thisStep);
             thisStep = thisStep.parentNode;
         }
 
@@ -118,8 +118,8 @@ class AStar {
             return 0;
     }
 
-    public static function pathTo(sx:Int, sy:Int, ex:Int, ey:Int, canEnter:Int -> Int -> Bool, giveUpAfter:Int = 10000):Array<IntPoint> {
-        return new AStar(canEnter, new IntPoint(sx, sy)).findPathTo(new IntPoint(ex, ey), giveUpAfter);
+    public static function pathTo(start:IntPoint, end:IntPoint, canEnter:IntPoint -> Bool, giveUpAfter:Int = 10000):Array<IntPoint> {
+        return new AStar(canEnter, start).findPathTo(end, giveUpAfter);
     }
 }
 
@@ -129,8 +129,8 @@ class AStarNode extends IntPoint {
     public var f:Int = 0;
     public var parentNode:AStarNode = null;
 
-    public function new(x:Int, y:Int, parent:AStarNode) {
-        super(x, y);
+    public function new(x:Int, y:Int, z:Int, parent:AStarNode) {
+        super(x, y, z);
         this.parentNode = parent;
     }
 }

@@ -159,7 +159,9 @@ class PlayScreen extends Screen {
                 continue;
 
             var g = getGraphic(c.x, c.y, c.z);
-            var color = c.glyph == "@" ? Color.hsv(200, 20, 90) : getCreatureColor(c);
+            var color = getCreatureColor(c);
+            if (c.isHero())
+                color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(200, 20, 50);
             var bg = g.bg;
             if (c.fearCounter > 0)
                 bg = Color.hsv(60, 50, 50);

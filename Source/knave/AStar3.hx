@@ -4,15 +4,15 @@ class AStar3 {
     private var open:Array<AStar3Node> = null;
     private var closed:Array<AStar3Node> = null;
 
-    private var neighbors:IntPoint3 -> Array<IntPoint3>;
-    private var start:IntPoint3;
+    private var neighbors:IntPoint -> Array<IntPoint>;
+    private var start:IntPoint;
 
-    public function new(neighbors:IntPoint3 -> Array<IntPoint3>, start:IntPoint3) {
+    public function new(neighbors:IntPoint -> Array<IntPoint>, start:IntPoint) {
         this.neighbors = neighbors;
         this.start = start;
     }
 
-    public function findPathTo(end:IntPoint3, giveUpAfter:Int):Array<IntPoint3> { 
+    public function findPathTo(end:IntPoint, giveUpAfter:Int):Array<IntPoint> { 
         if(start.x == end.x && start.y == end.y && start.z == end.z)
             return [];
 
@@ -73,12 +73,12 @@ class AStar3 {
         return walkBackToStart(end);
     }
 
-    private function walkBackToStart(end:IntPoint3):Array<IntPoint3> {
+    private function walkBackToStart(end:IntPoint):Array<IntPoint> {
         var thisStep = getFromList(closed, end);
         if (thisStep == null)
             return [];
 
-        var steps:Array<IntPoint3> = [];
+        var steps:Array<IntPoint> = [];
         while(thisStep.x != start.x || thisStep.y != start.y || thisStep.z != start.z) {
             steps.push(thisStep);
             thisStep = thisStep.parentNode;
@@ -88,15 +88,15 @@ class AStar3 {
         return steps;
     }
 
-    private function getGCost(from:IntPoint3, to:IntPoint3):Int {
+    private function getGCost(from:IntPoint, to:IntPoint):Int {
         return Math.floor(Math.max(Math.max(Math.abs(from.x - to.x), Math.abs(from.y - to.y)), Math.abs(from.z - to.z)));
     }
 
-    private function getHCost(from:IntPoint3, to:IntPoint3):Int {
+    private function getHCost(from:IntPoint, to:IntPoint):Int {
         return Math.floor(Math.abs(from.x - to.x) + Math.abs(from.y - to.y) + Math.abs(from.z - to.z));
     }
 
-    private function getFromList(list:Array<AStar3Node>, loc:IntPoint3):AStar3Node {
+    private function getFromList(list:Array<AStar3Node>, loc:IntPoint):AStar3Node {
         for (other in list){
             if (other.x == loc.x && other.y == loc.y && other.z == loc.z)
                 return other;
@@ -113,12 +113,12 @@ class AStar3 {
             return 0;
     }
 
-    public static function pathTo(start:IntPoint3, end:IntPoint3, neighbors:IntPoint3 -> Array<IntPoint3>, giveUpAfter:Int = 10000):Array<IntPoint3> {
+    public static function pathTo(start:IntPoint, end:IntPoint, neighbors:IntPoint -> Array<IntPoint>, giveUpAfter:Int = 10000):Array<IntPoint> {
         return new AStar3(neighbors, start).findPathTo(end, giveUpAfter);
     }
 }
 
-class AStar3Node extends IntPoint3 {
+class AStar3Node extends IntPoint {
     public var g:Int = 0;
     public var h:Int = 0;
     public var f:Int = 0;
