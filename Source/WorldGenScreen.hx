@@ -106,6 +106,11 @@ class WorldGenScreen extends Screen {
             } while(world.tiles.get(ally.x, ally.y, ally.z) != world.tile_floor);
             ally.update();
         }
+        var hue = Math.random() * 360;
+        var hueOffset = 360.0 / (world.heroParty.length+1);
+        for (hero in world.heroParty) {
+            hero.color = Color.hsv((hue += hueOffset) % 360, 66, 50);
+        }
     }
 
     private function addCreatures():Void {
@@ -359,15 +364,21 @@ class WorldGenScreen extends Screen {
             for (i in 0 ... 20) {
                 var x = Math.floor(Math.random() * world.heights.width);
                 var y = Math.floor(Math.random() * world.heights.height);
-                var mx = Math.floor(Math.random() * 3) - 1;
-                var my = Math.floor(Math.random() * 3) - 1;
+                var ox = x;
+                var oy = y;
+                for (i in 0 ... 1) {
+                    x = ox;
+                    y = oy;
+                    var mx = Math.floor(Math.random() * 3) - 1;
+                    var my = Math.floor(Math.random() * 3) - 1;
 
-                while (world.tiles.isInBounds(x, y, z) && world.tiles.get(x, y, z) == world.tile_wall) {
-                    world.heights.set(x, y, z, world.wallHeight - 0.01);
-                    world.tiles.set(x, y, z, world.tile_floor);
+                    while (world.tiles.isInBounds(x, y, z) && world.tiles.get(x, y, z) == world.tile_wall) {
+                        world.heights.set(x, y, z, world.wallHeight - 0.01);
+                        world.tiles.set(x, y, z, world.tile_floor);
 
-                    x += mx;
-                    y += my;
+                        x += mx;
+                        y += my;
+                    }
                 }
             }
         }

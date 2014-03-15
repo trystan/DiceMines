@@ -15,6 +15,7 @@ class Creature {
     public var glyph:String;
     public var name:String;
     public var fullName:String;
+    public var color:Color;
     public var ai:NpcAi;
 
     public function isHero():Bool { return glyph == "@"; }

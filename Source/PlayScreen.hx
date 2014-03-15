@@ -135,6 +135,8 @@ class PlayScreen extends Screen {
     public function draw(display:AsciiDisplay):Void {
         display.clear();
 
+        var playerColor = world.player.color.lerp(new Color(250,250,250), 0.5);
+
         var vx = Math.floor(player.x - display.widthInCharacters / 2);
         var vy  = Math.floor(player.y - display.heightInCharacters / 2);
         viewLeft = vx;
@@ -159,15 +161,17 @@ class PlayScreen extends Screen {
                 continue;
 
             var g = getGraphic(c.x, c.y, c.z);
-            var color = getCreatureColor(c);
+            var fg = getCreatureColor(c);
             if (c.isHero())
-                color = c == player ? Color.hsv(200, 20, 90) : Color.hsv(200, 20, 50);
+                fg = c.color;
+            if (c == world.player)
+                fg = playerColor;
             var bg = g.bg;
             if (c.fearCounter > 0)
                 bg = Color.hsv(60, 50, 50);
             if (c.sleepCounter > 0)
                 bg = Color.hsv(180, 20, 50);
-            display.write(c.glyph, c.x - vx, c.y - vy, color.toInt(), bg.toInt());
+            display.write(c.glyph, c.x - vx, c.y - vy, fg.toInt(), bg.toInt());
         }
 
         for (p in world.projectiles) {
@@ -178,21 +182,29 @@ class PlayScreen extends Screen {
             display.write(p.glyph, p.x - vx, p.y - vy, p.color, g.bg.toInt());
         }
 
-        var x = display.widthInCharacters - 16;
         var y = 1;
         var fg = new Color(200, 200, 200).toInt();
         var bg = new Color(0, 0, 0).toInt();
-        display.write(player.name + " " + player.hp + "/" + player.maxHp, x, y++, fg, bg);
-        var characterMelee = player.meleeWeapon == null ? "- no sword -" : player.meleeWeapon.name;
-        display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);
 
-        var characterRanged = player.rangedWeapon == null ? "-  no bow  -" : player.rangedWeapon.name;
-        display.write(characterRanged, display.widthInCharacters - characterRanged.length - 1, y++, fg, bg);
+        for (c in world.heroParty) {
+            if (!c.isAlive)
+                continue;
 
-        var characterArmor = player.armor == null ? "- no armor -" : player.armor.name;
-        display.write(characterArmor, display.widthInCharacters - characterArmor.length - 1, y++, fg, bg);
+            var labelColor = c == world.player ? playerColor.toInt() : c.color.toInt();
+            var label = '${c.name} ${c.hp}/${c.maxHp} (lvl ${c.z})';
+            display.write(label, display.widthInCharacters - label.length - 1, y++, labelColor, bg);
+            var characterMelee = c.meleeWeapon == null ? "- no sword -" : c.meleeWeapon.name;
+            display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);
 
-        x = 1;
+            var characterRanged = c.rangedWeapon == null ? "-  no bow  -" : c.rangedWeapon.name;
+            display.write(characterRanged, display.widthInCharacters - characterRanged.length - 1, y++, fg, bg);
+
+            var characterArmor = c.armor == null ? "- no armor -" : c.armor.name;
+            display.write(characterArmor, display.widthInCharacters - characterArmor.length - 1, y++, fg, bg);
+            y++;
+        }
+
+        var x = 1;
         y = 1;
         display.write('[@] view ${player.name}', x, y++, fg, bg);
         var item = world.getItem(player.x, player.y, player.z);

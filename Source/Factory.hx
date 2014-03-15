@@ -14,18 +14,11 @@ class Factory {
     }
 
     private static function name(isFemale:Bool):String {
-        var first = ["ara", "boro"];
-        var second = ["go", "la"];
-        var third = ["n", "z"];
+        var maleNames = ['john','robert','michael','william','david','richard','charles','joseph','thomas','christopher','daniel','paul','mark','donald','george','kenneth','steven','edward','brian','ronald','anthony','kevin','jason','matthew','gary','timothy','jose','larry','jeffrey','frank','scott','eric','stephen','andrew','raymond','gregory','joshua','jerry','dennis','walter','patrick','peter','harold','douglas','henry','carl','arthur','ryan','roger'];
+        var femaleNames = ['mary','patricia','linda','barbara','elizabeth','jennifer','maria','susan','margaret','dorothy','lisa','nancy','karen','betty','helen','sandra','donna','carol','ruth','sharon','michelle','laura','sarah','kimberly','deborah','jessica','shirley','cynthia','angela','melissa','brenda','amy','anna','rebecca','virginia','kathleen','pamela','martha','debra','amanda','stephanie','carolyn','christine','marie','janet','catherin','frances','ann','joyce','diane'];
+        var lastNames = ['smith','johnson','williams','brown','jones','miller','davis','garcia','rodriguez','wilson','martinez','anderson','taylor','thomas','hernandez','moore','martin','jackson','thompson','white','lopez','lee','gonzalez','harris','clark','lewis','robinson','walker','perez','hall','young','allen','sanchez','wright','king','scott','green','baker','adams','nelson','hill','ramirez','campbell','mitchell','roberts','carter','phillips','evans','turner','torres'];
 
-        var result = first[Math.floor(Math.random() * first.length)]
-                    + second[Math.floor(Math.random() * second.length)]
-                    + third[Math.floor(Math.random() * third.length)];
-
-        if (isFemale)
-            result += "aeiouy".charAt(Math.floor(Math.random() * 6));
-
-        return result;
+        return (isFemale ? femaleNames[Math.floor(Math.random() * femaleNames.length)] : maleNames[Math.floor(Math.random() * maleNames.length)]) + " " + lastNames[Math.floor(Math.random() * lastNames.length)];
     }
 
     public static function hero(isPlayer:Bool):Creature {
