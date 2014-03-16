@@ -16,9 +16,10 @@ class Item {
     public var onHitAbility:Ability;
 
     public var type:String;
+    public var innateValue:Int;
 
     public function getValue():Int {
-        var total = 0;
+        var total = innateValue;
         var stats = Dice.fromString(Dice.add(Dice.add(accuracyStat, damageStat), Dice.add(Dice.add(evasionStat, resistanceStat), pietyStat)));
         total += stats.number * stats.sides + stats.bonus;
 
@@ -33,6 +34,7 @@ class Item {
         this.color = color;
         this.type = type;
         this.name = name;
+        this.innateValue = Dice.roll("1d10+0");
 
         accuracyStat = "0d0+0";
         damageStat = "0d0+0";

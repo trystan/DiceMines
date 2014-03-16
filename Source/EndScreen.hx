@@ -46,9 +46,9 @@ class EndScreen extends Screen {
             "buy half a sandwich";
 
         var partyName = if (playScreen.world.heroParty.length == 1)
-            "just " + playScreen.player.name;
+            "just " + playScreen.player.fullName;
         else
-            playScreen.player.name + " and " + playScreen.player.world.heroParty.length + " others";
+            playScreen.player.fullName + " and " + (playScreen.player.world.heroParty.length - 1) + " others";
 
         partyName = Text.sentence(partyName);
 

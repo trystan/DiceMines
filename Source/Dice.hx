@@ -25,7 +25,7 @@ class Dice {
     }
 
     public function toString():String {
-        return number + "d" + sides + "+" + bonus;
+        return number + "d" + sides + (bonus < 0 ? "-" : "+") + bonus;
     }
 
     public function rollAll():Int {
@@ -36,9 +36,18 @@ class Dice {
     }
 
     public static function fromString(dice:String):Dice {
-        return new Dice(Std.parseInt(dice.split("d")[0]),
-                        Std.parseInt(dice.split("d")[1].split("+")[0]),
-                        Std.parseInt(dice.split("+")[1]));
+        var halfs = dice.split("d");
+        var number = Std.parseInt(halfs[0]);
+        var sides = 0;
+        var bonus = 0;
+        if (halfs[1].indexOf("-") == -1) {
+            sides = Std.parseInt(halfs[1].split("+")[0]);
+            bonus = Std.parseInt(halfs[1].split("+")[1]);
+        } else {
+            sides = Std.parseInt(halfs[1].split("-")[0]);
+            bonus = Std.parseInt(halfs[1].split("-")[1]);
+        }
+        return new Dice(number, sides, bonus);
     }
 
     public static function rollExact(number:Int, sides:Int, bonus:Int):Int {

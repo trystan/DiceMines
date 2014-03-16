@@ -120,23 +120,23 @@ class Factory {
         else if (c.lore > 0.50)
             traits.push("knows some things about the world");
 
-        var direction = cast(c.ai, AllyAi).forwardMultiplier > 0 ? "ahead of" : "behind";
+        var direction = cast(c.ai, AllyAi).forwardMultiplier > 0 ? "front" : "back";
         var distance = cast(c.ai, AllyAi).favoredDistance;
         if (distance < 4)
             traits.push('prefers to stay near the center of the group');
         else if (distance > 5)
-            traits.push('prefers to stay $direction the group');
+            traits.push('prefers to stay in the $direction of the group');
         else if (distance > 7)
-            traits.push('prefers to stay far $direction the group');
+            traits.push('prefers to stay in the far $direction of the group');
 
         if (traits.length > 0)
             c.addHistory(c.getSubjectPronoun() + " " + Text.andList(traits) + ".");
 
-        if (c.meleeWeapon == null && Math.random() < 0.5)
+        if (c.meleeWeapon == null && Math.random() < 0.25)
             c.meleeWeapon = meleeWeapon();
-        if (c.rangedWeapon == null && Math.random() < 0.5)
+        if (c.rangedWeapon == null && Math.random() < 0.25)
             c.rangedWeapon = rangedWeapon();
-        if (c.armor == null && Math.random() < 0.5)
+        if (c.armor == null && Math.random() < 0.25)
             c.armor = armor();
 
         return c;
@@ -261,7 +261,10 @@ class Factory {
 
     public static function arachnid(z:Int):Creature {
         var c = new Creature("a", "arachnid", 0, 0, 0);
-        c.accuracyStat = "5d5+5";
+        c.accuracyStat = "7d7+7";
+        c.damageStat = "4d4+4";
+        c.evasionStat = "4d4+4";
+        c.resistanceStat = "4d4+4";
         c.gainDice(5);
         c.abilities.push(ability("Jump"));
         return maybeBig(c, z);
@@ -269,7 +272,10 @@ class Factory {
 
     public static function bear(z:Int):Creature {
         var c = new Creature("b", "bear", 0, 0, 0);
-        c.damageStat = "5d5+5";
+        c.accuracyStat = "4d4+4";
+        c.damageStat = "6d6+6";
+        c.evasionStat = "4d4+4";
+        c.resistanceStat = "4d4+4";
         c.abilities.push(ability("wounding attack"));
         c.sleepCounter = 60 + z * 20 + Dice.roll("1d20+0");
         return maybeBig(c, z);
@@ -280,15 +286,20 @@ class Factory {
         c.abilities.push(ability("sneak"));
         if (of != null) {
             c.maxHp = of.maxHp;
+            c.fullName = c.name;
+            c.gender = of.gender;
             c.hp = c.maxHp;
-            c.evasionStat = Dice.add(c.evasionStat, "3d3+3");
+            c.accuracyStat = of.accuracyStat;
+            c.damageStat = of.damageStat;
+            c.evasionStat = Dice.add(of.evasionStat, "3d3+3");
+            c.resistanceStat = of.resistanceStat;
             c.fearCounter = Dice.roll("3d3+3");
             c.x = of.x;
             c.y = of.y;
             c.z = of.z;
             return c;
         } else {
-            c.evasionStat = "5d5+5";
+            c.evasionStat = "6d6+6";
             if (Math.random() < 0.9)
                 c.meleeWeapon = new Item("|", Color.hsv(180, 20, 80), "melee", "dice miner's pick");
 
@@ -451,9 +462,14 @@ class Factory {
             case 1: item.damageStat = Dice.add(item.damageStat, bonus); modifier = "damaging ";
             case 2: item.evasionStat = Dice.add(item.evasionStat, bonus); modifier = "evasive ";
             case 3: item.resistanceStat = Dice.add(item.resistanceStat, bonus); modifier = "resistant ";
-            case 4: item.pietyStat = Dice.add(item.pietyStat, bonus); modifier = "holy ";
+            case 4:
+                    if (item.name.indexOf("unholy") == -1) {
+                        item.pietyStat = Dice.add(item.pietyStat, bonus);
+                        modifier = "holy ";
+                    }
         }
         item.name = modifier + item.name;
+
         return item;
     }
 

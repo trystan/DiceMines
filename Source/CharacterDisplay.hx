@@ -48,6 +48,9 @@ class CharacterDisplay {
         for (line in Text.wordWrap(hero.about, display.widthInCharacters - x - 37))
             display.write(line, hx, hy++);
 
+        if (!compact)
+            display.write('${hero.name} is currently ${cast(hero.ai, AllyAi).currently}', hx, hy++);
+
         if (compact) {
             var equipment = new Array<String>();
             if (hero.meleeWeapon != null)

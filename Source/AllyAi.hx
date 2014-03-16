@@ -10,17 +10,24 @@ class AllyAi extends NpcAi {
     public var forwardMultiplier:Int;
     public var treasure:{ position:IntPoint, item:Item };
 
-    public var lastAction:String;
+    public var currently:String;
 
     public function new(self:Creature) {
         super(self);
 
         favoredDistance = Dice.roll("1d9+1");
         forwardMultiplier = Math.random() < 0.75 ? 1 : -1;
+        currently = "idle";
     }
 
     override public function update():Void {
         world = self.world;
+
+        if (enemy != null && !enemy.isAlive)
+            enemy = null;
+
+        if (treasure != null && world.getItem(treasure.position.x, treasure.position.y, treasure.position.z) == null)
+            treasure = null;
 
         if (self.sleepCounter > 0)
             return;
@@ -45,14 +52,13 @@ class AllyAi extends NpcAi {
                 fight();
                 return;
             }
-        }
-
-        if (enemy == null && Math.random() < self.helpfulness) {
-            for (c in world.heroParty) {
-                if (c.isAlive && c.z == self.z && c.ai.enemy != null) {
-                    enemy = c.ai.enemy;
-                    self.say("I'll help you with that " + enemy.name + ", " + c.name + "!");
-                    break;
+            if (enemy == null && Math.random() < self.helpfulness) {
+                for (c in world.heroParty) {
+                    if (c.isAlive && c.z == self.z && c.ai.enemy != null) {
+                        enemy = c.ai.enemy;
+                        self.say("I'll help you with that " + enemy.name + ", " + c.name + "!");
+                        break;
+                    }
                 }
             }
         }
@@ -63,10 +69,7 @@ class AllyAi extends NpcAi {
             return;
         }
 
-        if (enemy != null && self.distanceTo(enemy) > favoredDistance + favoredDistance * self.aggresiveness)
-            enemy = null;
-
-        if (enemy != null && (!world.player.isVisible() || self.distanceTo(world.player) < favoredDistance)) {
+        if (enemy != null) {
             fight();
         } else if (treasure != null) {
             getTreasure();
@@ -78,7 +81,12 @@ class AllyAi extends NpcAi {
     }
 
     private function fight():Void {
-        lastAction = "fight";
+        currently = (enemy == null ? "looking for a fight" : "fighting " + enemy.fullName);
+
+        if (enemy == null) {
+            stayWithThePlayer();
+            return;
+        }
 
         if (useAbility())
             return;
@@ -105,33 +113,43 @@ class AllyAi extends NpcAi {
     }
 
     private function getTreasure():Void {
-        lastAction = "getTreasure";
+        currently = (treasure == null ? "looking for treasure" : "getting " + treasure.item.name);
 
-        if (self.z == treasure.position.z && self.y == treasure.position.y && self.x == treasure.position.x) {
+        if (treasure == null)  {
+            stayWithThePlayer();
+        } else if (world.getItem(treasure.position.x, treasure.position.y, treasure.position.z) == null) {
+            treasure = null;
+            stayWithThePlayer();
+        } else if (self.z == treasure.position.z && self.y == treasure.position.y && self.x == treasure.position.x) {
             self.pickupItem();
             treasure = null;
         } else if (self.z == treasure.position.z)
             goTo(treasure.position.x, treasure.position.y, treasure.position.z);
         else {
             treasure = null;
-            self.wander();
+            stayWithThePlayer();
         }
     }
 
     private function stayWithThePlayer():Void {
-        lastAction = "stayWithThePlayer";
+        currently = path == null || path.length < 4 ? "staying with the group" : 'going to ${world.player.fullName}';
 
         if (!world.player.isVisible()) {
+            currently = "looking for " + world.player.fullName;
             self.wander();
             return;
         }
-        var targetPoint = new IntPoint(world.player.x, world.player.y, world.player.z);
-        var d = 0;
-        while (d++ < favoredDistance && world.isWalkable(targetPoint.x + world.player.vx, targetPoint.y + world.player.vy, targetPoint.z)) {
-            targetPoint.x += world.player.vx * forwardMultiplier;
-            targetPoint.y += world.player.vy * forwardMultiplier;
+        if (world.player.z == self.z) {
+            var targetPoint = new IntPoint(world.player.x, world.player.y, world.player.z);
+            var d = 0;
+            while (d++ < favoredDistance && world.isWalkable(targetPoint.x + world.player.vx, targetPoint.y + world.player.vy, targetPoint.z)) {
+                targetPoint.x += world.player.vx * forwardMultiplier;
+                targetPoint.y += world.player.vy * forwardMultiplier;
+            }
+            goTo(targetPoint.x, targetPoint.y, targetPoint.z);
+        } else {
+            goTo(world.player.x, world.player.y, world.player.z);
         }
-        goTo(targetPoint.x, targetPoint.y, targetPoint.z);
     }
 
     private function nearestVisibleItem(melee:Item, ranged:Item, armor:Item): { position:IntPoint, item:Item } {
@@ -143,15 +161,18 @@ class AllyAi extends NpcAi {
         var fromPoint = new IntPoint(self.x, self.y, self.z);
 
         for (i in world.itemsList) {
+            if (!world.isWalkable(i.position.x, i.position.y, i.position.z))
+                continue;
+
             switch (i.item.type) {
                 case "melee":
-                    if (melee != null && melee.getValue() > i.item.getValue())
+                    if (melee != null && melee.getValue() >= i.item.getValue())
                         continue;
                 case "ranged":
-                    if (ranged != null && ranged.getValue() > i.item.getValue())
+                    if (ranged != null && ranged.getValue() >= i.item.getValue())
                         continue;
                 case "armor":
-                    if (armor != null && armor.getValue() > i.item.getValue())
+                    if (armor != null && armor.getValue() >= i.item.getValue())
                         continue;
             }
 
