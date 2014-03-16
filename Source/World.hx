@@ -30,6 +30,7 @@ class World {
     public var messages:Array<String>;
     public var projectiles:Array<Projectile>;
     public var effects:Array<{ countdown:Int, func:Int -> Void }>;
+    public var partyAi:PartyAi;
 
     public var player:Creature;
 
@@ -45,9 +46,11 @@ class World {
         heroParty = new Array<Creature>();
         items = new Map<String, Item>();
         itemsList = new Array<{ position:IntPoint, item:Item }>();
+        partyAi = new PartyAi(heroParty);
     }
 
     public function update():Void {
+        partyAi.onUpdate(this);
         var newEffects = new Array<{ countdown:Int, func:Int -> Void }>();
         for (e in effects) {
             if (--e.countdown > 0)

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
-	<meta title="DiceMiner" package="com.example.diceminer" version="1.0.0" company="Trystan" />
-	<app main="Main" path="Export" file="DiceMiner" />
+	<meta title="DiceMines" package="com.example.dicemines" version="1.0.0" company="Trystan" />
+	<app main="Main" path="Export" file="DiceMines" />
     <window width="1280" height="720" />
 
 	<source path="Source" />

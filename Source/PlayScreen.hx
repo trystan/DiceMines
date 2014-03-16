@@ -9,11 +9,14 @@ class PlayScreen extends Screen {
     private var isAnimating:Bool = false;
     private var updateAfterAnimating:Bool = false;
 
+    private var identified:Array<Dynamic>;
+
     public function new(world:World) {
         super();
 
         this.world = world;
         this.player = world.player;
+        identified = new Array<Dynamic>();
 
         world.playScreen = this;
 
@@ -149,9 +152,10 @@ class PlayScreen extends Screen {
                 var g = getGraphic(x, y, player.z);
 
                 var item = world.getItem(x, y, player.z);
-                if (item != null)
+                if (item != null) {
                     display.write(item.glyph, sx, sy, item.color.toInt(), g.bg.toInt());
-                else
+                    notice(item, x, y, player.z);
+                } else
                     display.write(g.glyph, sx, sy, g.fg.toInt(), g.bg.toInt());
             }
         }
@@ -159,6 +163,8 @@ class PlayScreen extends Screen {
         for (c in world.creatures) {
             if (c.z != player.z || !isVisible(c.x, c.y, c.z) || (c != player && !c.isVisible()))
                 continue;
+
+            notice(c);
 
             var g = getGraphic(c.x, c.y, c.z);
             var fg = getCreatureColor(c);
@@ -191,7 +197,7 @@ class PlayScreen extends Screen {
                 continue;
 
             var labelColor = c == world.player ? playerColor.toInt() : c.color.toInt();
-            var label = '${c.fullName} ${c.hp}/${c.maxHp} (lvl ${c.z})';
+            var label = '${c.fullName} ${c.hp}/${c.maxHp} (floor ${c.z})';
             display.write(label, display.widthInCharacters - label.length - 1, y++, labelColor, bg);
             var characterMelee = c.meleeWeapon == null ? "no sword" : c.meleeWeapon.name;
             display.write(characterMelee, display.widthInCharacters - characterMelee.length - 1, y++, fg, bg);
@@ -229,6 +235,18 @@ class PlayScreen extends Screen {
         }
 
         display.update();
+    }
+
+    private function notice(object:Dynamic, x:Int=0, y:Int=0, z:Int=0):Void {
+        if (Lambda.indexOf(identified, object) > -1)
+            return;
+
+        if (Std.is(object, Item))
+            world.partyAi.onItemSpotted(cast(object, Item), new IntPoint(x,y,z));
+        else
+            world.partyAi.onCreatureSpotted(cast(object, Creature));
+
+        identified.push(object);
     }
 
     private function isVisible(x:Int, y:Int, z:Int):Bool {

@@ -132,7 +132,12 @@ class AllyAi extends NpcAi {
     }
 
     private function stayWithThePlayer():Void {
-        currently = path == null || path.length < 4 ? "staying with the group" : 'going to ${world.player.fullName}';
+        currently = if (path == null || path.length == 0)
+            "trying to find the group";
+        else if (path.length < 4)
+            "staying with the group";
+        else
+            'going to ${world.player.fullName}';
 
         if (!world.player.isVisible()) {
             currently = "looking for " + world.player.fullName;

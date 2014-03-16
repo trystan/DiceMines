@@ -25,7 +25,7 @@ class Dice {
     }
 
     public function toString():String {
-        return number + "d" + sides + (bonus < 0 ? "-" : "+") + bonus;
+        return number + "d" + sides + (bonus < 0 ? "" : "+") + bonus;
     }
 
     public function rollAll():Int {

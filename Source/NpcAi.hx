@@ -129,7 +129,7 @@ class NpcAi {
             if (self.z == tz) {
                 path = AStar.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, self.z), function(p:IntPoint):Bool {
                     return world.isWalkable(p.x, p.y, p.z, self.isFlying);
-                }, 40);
+                }, self.isHero() ? 80 : 40);
 
             } else if (self.z != tz) {
                 path = AStar3.pathTo(new IntPoint(self.x, self.y, self.z), new IntPoint(tx, ty, tz), function(p:IntPoint):Array<IntPoint> {
@@ -145,7 +145,7 @@ class NpcAi {
                     if (world.canGoDown(p.x, p.y, p.z))
                         ok.push(p.plus(new IntPoint(0, 0, 1)));
                     return ok;
-                }, 40);
+                }, self.isHero() ? 80 : 40);
             }
         }
 

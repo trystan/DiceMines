@@ -29,7 +29,7 @@ class Factory {
         var dad = createParent(c);
         var mom = createParent(c);
         var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and a " + mom + ".");
-        c.about = c.name + birth;
+        c.about = Text.sentence(c.name + birth);
 
         addHistory(c, 3);
 

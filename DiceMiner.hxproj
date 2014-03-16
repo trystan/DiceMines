@@ -22,7 +22,7 @@
   <build>
     <option directives="" />
     <option flashStrict="False" />
-    <option mainClass="com.example.diceminer" />
+    <option mainClass="com.example.dicemines" />
     <option enabledebug="False" />
     <option additional="" />
   </build>

@@ -195,9 +195,9 @@ class Creature {
         ai.update();
     }
 
-    public function say(text:String) {
-        if (isHero() && isAlive && this != world.player && Math.random() < extroversion)
-            world.addMessage(name + ' says "$text"');
+    public function say(text:String, force:Bool = false) {
+        if (force || isHero() && isAlive && this != world.player && Math.random() < extroversion)
+            world.addMessage(name + ' says "${Text.sentence(text)}"');
     }
 
     public function runFrom(other:Creature):Void {
@@ -242,6 +242,11 @@ class Creature {
         move(mx, my, 0);
     }
 
+    public function you(message:String):Void {
+        if (this == world.player)
+            world.addMessage("You " + message);
+    }
+
     public function pickupItem():Void {
         var item = world.removeItem(x, y, z);
         if (item != null) {
@@ -250,20 +255,21 @@ class Creature {
                 dice[sides-1]++;
             } else if (item.type == "ranged") {
                 if (rangedWeapon != null)
-                    world.addItem(rangedWeapon, x, y, z);
+                    dropItem(rangedWeapon, x, y, z);
                 rangedWeapon = item;
-                world.addMessage('$name weilds a ${item.describe()}');
+                you(' weild a ${item.describe()}');
             } else if (item.type == "melee") {
                 if (meleeWeapon != null)
-                    world.addItem(meleeWeapon, x, y, z);
+                   dropItem(meleeWeapon, x, y, z);
                 meleeWeapon = item;
-                world.addMessage('$name weilds a ${item.describe()}');
+                you(' weilds a ${item.describe()}');
             } else if (item.type == "armor") {
                 if (armor != null)
-                    world.addItem(armor, x, y, z);
+                    dropItem(armor, x, y, z);
                 armor = item;
-                world.addMessage('$name wears a ${item.describe()}');
+                you(' wears a ${item.describe()}');
             }
+            world.partyAi.onItemPickedUp(item, new IntPoint(x,y,z), this);
         }
     }
 
@@ -352,7 +358,9 @@ class Creature {
         var evasion = Dice.roll(effectiveEvasionStat("ranged"));
 
         if (accuracy < evasion) {
-            world.addMessage('$fullName ${quantify(evasion-accuracy)} evades ${other.fullName}\'s ${projectile.name}'); //'
+            you(' ${quantify(evasion-accuracy)} evade ${other.fullName}\'s ${projectile.name}'); //'
+            if (evasion > accuracy * 2)
+                say('${other.fullName} can\'t hit me!'); //'
             projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
@@ -365,11 +373,14 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('$fullName ${quantify(resistance-damage)} resists ${other.fullName}\'s ${projectile.name}'); //'
-        else if (actualDamage >= hp)
-            world.addMessage('${other.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage, killing ${getPronoun()}');
-        else
-            world.addMessage('${other.fullName} ${quantify(accuracy-evasion+damage-resistance)} hits $fullName for $actualDamage damage');
+            you(' ${quantify(resistance-damage)} resist ${other.fullName}\'s ${projectile.name}'); //'
+        else { 
+            you(' are ${quantify(accuracy-evasion+damage-resistance)} hit by $fullName for $actualDamage damage');
+            if (damage > resistance * 2) {
+                say('Ouch! ${other.name}\'s really hurt!'); //'
+                fearCounter += 5;
+            }
+        }
         
         if (armor != null)
             armor.onHit(this, other);
@@ -441,6 +452,7 @@ class Creature {
         while (world.isEmptySpace(ix, iy, iz))
             iz++;
         world.addItem(item, ix, iy, iz);
+        world.partyAi.onItemDropped(item, new IntPoint(ix,iy,iz), this);
     }
 
     private function die(attacker:Creature):Void {
@@ -489,6 +501,8 @@ class Creature {
 
         if (isHero())
             world.addCreature(Factory.ghost(z, this));
+
+        world.partyAi.onCreatureDied(this, attacker);
     }
 
     public function attack(other:Creature):Void {
@@ -502,7 +516,7 @@ class Creature {
         var evasion = Dice.roll(other.effectiveEvasionStat("melee"));
 
         if (accuracy < evasion) {
-            world.addMessage('${other.fullName} ${quantify(evasion-accuracy)} evades $fullName');
+            you(' ${quantify(evasion-accuracy)} evade ${other.fullName}');
             nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }
@@ -515,11 +529,11 @@ class Creature {
             actualDamage = 1;
 
         if (actualDamage == 0)
-            world.addMessage('${other.fullName} ${quantify(resistance-damage)} resists $fullName');
+            you('r attack is ${quantify(resistance-damage)} resisted by ${other.fullName}');
         else if (actualDamage >= other.hp)
-            world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage, killing ${other.getPronoun()}');
+            you(' ${quantify(accuracy-evasion+damage-resistance)} hit ${other.fullName} for $actualDamage damage, killing ${other.getPronoun()}');
         else
-            world.addMessage('$fullName ${quantify(accuracy-evasion+damage-resistance)} hits ${other.fullName} for $actualDamage damage');
+            you(' ${quantify(accuracy-evasion+damage-resistance)} hit ${other.fullName} for $actualDamage damage');
 
         if (other.armor != null)
             other.armor.onHit(other, this);
@@ -562,7 +576,7 @@ class Creature {
             gains.push('1d$sides');
         }
         if (world != null)
-            world.addMessage('$fullName gains ${gains.join(", ")}');
+            you(' gain ${gains.join(", ")}');
     }
 
     public function useDice(number:Int, sides:Int):Void {
@@ -592,9 +606,9 @@ class Creature {
         if (fallDistance > 0) {
             hp -= fallDistance * 2;
             if (hp < 1)
-                world.addMessage('$fullName falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"} and dies');
+                you(' fall $fallDistance ${fallDistance == 1 ? "floor" : "floors"} and die');
             else
-                world.addMessage('$fullName falls $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
+                you(' fall $fallDistance ${fallDistance == 1 ? "floor" : "floors"}');
         }
 
         if (hp < 1)
