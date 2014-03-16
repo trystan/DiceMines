@@ -32,6 +32,11 @@ class AllyAi extends NpcAi {
         if (self.sleepCounter > 0)
             return;
 
+        if (self.distanceTo(world.player) > favoredDistance * 2) {
+            enemy = null;
+            treasure = null;
+        }
+
         if (Math.random() < self.greed) {
             var here = world.getItem(self.x, self.y, self.z);
             if (here != null && here.type == "dice") {

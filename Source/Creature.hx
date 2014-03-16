@@ -359,8 +359,10 @@ class Creature {
 
         if (accuracy < evasion) {
             you(' ${quantify(evasion-accuracy)} evade ${other.fullName}\'s ${projectile.name}'); //'
-            if (evasion > accuracy * 2)
+            if (evasion > accuracy * 2 && !other.isHero())
                 say('${other.fullName} can\'t hit me!'); //'
+            else if (evasion > accuracy * 2 && other.isHero() && !isHero())
+                other.say(' that ${name} is hard to hit.');
             projectile.owner.nextAttackEffects = new Array<Creature -> Creature -> Void>();
             return;
         }

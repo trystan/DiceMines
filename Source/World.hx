@@ -105,6 +105,9 @@ class World {
     }
 
     public function addItem(item:Item, x:Int, y:Int, z:Int):Void {
+        if (isLava(x, y, z))
+            return;
+
         items.set('$x,$y,$z', item);
         itemsList.push({ position:new IntPoint(x,y,z), item: item });
     }

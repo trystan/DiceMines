@@ -173,7 +173,7 @@ class PlayScreen extends Screen {
             if (c == world.player)
                 fg = playerColor;
             var bg = g.bg;
-            if (c.fearCounter > 0)
+            if (c.fearCounter > 0 && !c.isHero())
                 bg = Color.hsv(60, 50, 50);
             if (c.sleepCounter > 0)
                 bg = Color.hsv(180, 20, 50);

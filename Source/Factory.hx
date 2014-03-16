@@ -31,7 +31,7 @@ class Factory {
         var birth = dad == mom ? ("'s parents were both " + mom + "s.") : (" was born to a " + dad + " and a " + mom + ".");
         c.about = Text.sentence(c.name + birth);
 
-        addHistory(c, 3);
+        addHistory(c, 4);
 
         c.maxHp += Dice.roll("1d5+0");
         var bonuses = ["1d0+1", "0d1+0", "0d0+1"];
@@ -50,6 +50,13 @@ class Factory {
             c.evasionStat = Dice.add(c.evasionStat, "0d0+2");
             c.resistanceStat = Dice.add(c.resistanceStat, "0d0+2");
             c.pietyStat = Dice.add(c.pietyStat, "0d0+2");
+        } else if (Math.random() < 0.25) {
+            descriptors.push('has bad luck');
+            c.accuracyStat = Dice.subtract(c.accuracyStat, "0d0+2");
+            c.damageStat = Dice.subtract(c.damageStat, "0d0+2");
+            c.evasionStat = Dice.subtract(c.evasionStat, "0d0+2");
+            c.resistanceStat = Dice.subtract(c.resistanceStat, "0d0+2");
+            c.pietyStat = Dice.subtract(c.pietyStat, "0d0+2");
         }
 
         if (descriptors.length > 0)
@@ -58,6 +65,23 @@ class Factory {
         c.hp = c.maxHp;
 
         var traits = [];
+
+        if (Math.random() < 0.20) {
+            traits.push("is very religious");
+            c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+            c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+            c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+        }
+
+        if (Math.random() < 0.20) {
+            traits.push("eats healthy food");
+            c.maxHp += Dice.roll("2d2+0");
+        }
+
+        if (Math.random() < 0.20) {
+            traits.push("likes exercising");
+            c.maxHp += Dice.roll("2d2+0");
+        }
 
         if (Math.random() < 0.33) {
             traits.push("likes traveling");
@@ -148,7 +172,7 @@ class Factory {
                 var forgedItem:Item = null;
                 switch (Math.floor(Math.random() * 3)) {
                     case 0:
-                        c.meleeWeapon = addStatBonusToItem(addAbilityBonusToItem(rangedWeapon()));
+                        c.meleeWeapon = addStatBonusToItem(addAbilityBonusToItem(meleeWeapon()));
                         c.meleeWeapon.name = c.name + "'s sword";
                     case 1:
                         c.rangedWeapon = addStatBonusToItem(addAbilityBonusToItem(rangedWeapon()));
@@ -187,6 +211,7 @@ class Factory {
                         c.meleeWeapon = meleeWeapon();
                     if (c.armor == null && Math.random() < 0.25)
                         c.armor = armor();
+                    c.aggresiveness += 0.05;
                     potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "disarming attack", "rapid attack", "intimidate"];
                 case 1: // ranged
                     history = '${c.getSubjectPronoun()} wanted to be a hunter as a kid.';
@@ -197,16 +222,17 @@ class Factory {
                         c.rangedWeapon = addAbilityBonusToItem(rangedWeapon());
                     if (c.armor == null && Math.random() < 0.25)
                         c.armor = armor();
-                    potentialAbilityNames = ["accuracy boost", "damage boost", "Knock back", "Jump", "wounding attack"];
+                    potentialAbilityNames = ["Jump", "Knock back", "accuracy boost", "damage boost", "Knock back", "Jump", "wounding attack"];
                 case 2: // magic
                     history = '${c.getSubjectPronoun()} liked magic as a kid.';
-                    potentialAbilityNames = ["Jump", "magic missiles", "orb of pain", "explosion"];
+                    potentialAbilityNames = ["Jump", "Knock back", "magic missiles", "orb of pain", "explosion"];
                     c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.pietyStat = Dice.subtract(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
+                    c.lore += 0.5;
                     c.gainDice(3);
                 case 3: // piety
                     history = '${c.getSubjectPronoun()} liked myths as a kid.';
-                    potentialAbilityNames = ["turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
+                    potentialAbilityNames = ["Jump", "Knock back", "turn undead", "healing aura", "pious attack", "pious defence", "smite", "soothe"];
                     c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.pietyStat = Dice.add(c.pietyStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.helpfulness += 0.05;
@@ -215,7 +241,7 @@ class Factory {
                     history = '${c.getSubjectPronoun()} got into trouble as a kid.';
                     c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
                     c.evasionStat = Dice.add(c.evasionStat, bonuses[Math.floor(Math.random() * bonuses.length)]);
-                    potentialAbilityNames = ["Jump", "disarming attack", "wounding attack", "sneak", "soothe"];
+                    potentialAbilityNames = ["Jump", "Knock back", "disarming attack", "wounding attack", "sneak", "soothe"];
                     c.helpfulness -= 0.05;
                     c.gainDice(1);
             }
@@ -530,7 +556,7 @@ class JumpAbility extends Ability {
         var target = new IntPoint(self.ai.enemy.x, self.ai.enemy.y);
         var dice = self.getDiceToUseForAbility();
 
-        if (dice.number == 0 || here.distanceTo(target) < 2)
+        if (dice.number == 0 || here.distanceTo(target) < 3)
             return { percent: 0.0, func: function(self):Void { } };
 
         var roll = Dice.rollExact(dice.number, dice.sides, 0);
@@ -1123,15 +1149,39 @@ class HealingAuraAbility extends Ability {
     }
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
-        var isOk = 1.0 * self.hp / self.maxHp > 0.5;
-        return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() || isOk ? 0 : 0.25,
-               func: function(self):Void {
-                    var dice = self.getDiceToUseForAbility();
-                    if (dice.number > 0)
-                        doIt(self, dice.number, dice.sides);
-               }
-        };
+        if (self.isHero()) {
+            var min = 1000;
+            var average = 0.0;
+            var people = 0;
+            for (c in self.world.heroParty) {
+                if (c.isAlive) {
+                    min = Math.floor(Math.min(min, c.hp));
+                    average += c.hp;
+                    people++;
+                }
+            }
+            average /= people;
+
+            return {
+                percent: self.hasDice() && min < 10 || average < 20 ? 0.75 : 0.0,
+                   func: function(self):Void {
+                        var dice = self.getDiceToUseForAbility();
+                        if (dice.number > 0)
+                            doIt(self, dice.number, dice.sides);
+                   }
+            };
+
+        } else {
+            var isOk = 1.0 * self.hp / self.maxHp > 0.5;
+            return {
+                percent: self.nextAttackEffects.length > 0 || !self.hasDice() || isOk ? 0 : 0.25,
+                   func: function(self):Void {
+                        var dice = self.getDiceToUseForAbility();
+                        if (dice.number > 0)
+                            doIt(self, dice.number, dice.sides);
+                   }
+            };
+        }
     }
 
     override public function playerUsage(self:Creature):Void {

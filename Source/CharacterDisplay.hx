@@ -45,11 +45,6 @@ class CharacterDisplay {
 
         var hy = y - (compact ? 8 : 10);
         var hx = x + 35;
-        for (line in Text.wordWrap(hero.about, display.widthInCharacters - x - 37))
-            display.write(line, hx, hy++);
-
-        if (!compact)
-            display.write('${hero.name} is currently ${cast(hero.ai, AllyAi).currently}', hx, hy++);
 
         if (compact) {
             var equipment = new Array<String>();
@@ -60,9 +55,28 @@ class CharacterDisplay {
             if (hero.armor != null)
                 equipment.push(hero.armor.name);
 
+            for (line in Text.wordWrap(hero.about, display.widthInCharacters - x - 37))
+                display.write(line, hx, hy++);
+
+            var moreDetails = "";
             if (equipment.length > 0)
-                display.write("Uses " + Text.andList(equipment) + ".", hx, hy++);
+                moreDetails += Text.sentence(hero.name + " uses " + Text.andList(equipment) + ".") + " ";
+
+            var list = Lambda.array(Lambda.map(hero.abilities, function(a):String { return a.name.toLowerCase(); }));
+            if (list.length > 0)
+                moreDetails += Text.sentence(hero.getSubjectPronoun() + " knows " + Text.andList(list) + ".") + " ";
+
+            if (moreDetails.length > 0) {
+                for (line in Text.wordWrap(moreDetails, display.widthInCharacters - x - 37))
+                    display.write(line, hx, hy++);
+            }
+
         } else {
+            for (line in Text.wordWrap(hero.about, display.widthInCharacters - x - 37))
+                display.write(line, hx, hy++);
+
+            display.write('${hero.name} is currently ${cast(hero.ai, AllyAi).currently}', hx, hy++);
+            
             display.write("Equipment:", x-1, y++, light);
             if (hero.meleeWeapon != null)
                 display.write(hero.meleeWeapon.describe(), x, y++);
@@ -71,13 +85,7 @@ class CharacterDisplay {
             if (hero.armor != null)
                 display.write(hero.armor.describe(), x, y++);
             y++;
-        }
 
-        if (compact) {
-            var list = Lambda.array(Lambda.map(hero.abilities, function(a):String { return a.name.toLowerCase(); }));
-            if (list.length > 0)
-                display.write("Knows " + Text.andList(list) + ".", hx, hy++);
-        } else {
             display.write("Special abilities:", x-1, y++, light);
             for (ability in hero.abilities) {
                 display.write(ability.name, x, y++);
@@ -91,11 +99,11 @@ class CharacterDisplay {
     }
 
     private static function breakdown(dice:String):String {
-        var number = Std.parseInt(dice.split("d")[0]);
-        var sides = Std.parseInt(dice.split("d")[1].split("+")[0]);
-        var bonus = Std.parseInt(dice.split("+")[1]);
-        var min = number + bonus;
-        var max = number * sides + bonus;
+        var d = Dice.fromString(dice);
+        var min0 = d.number + d.bonus;
+        var max0 = d.number * d.sides + d.bonus;
+        var min = Math.floor(Math.min(min0, max0));
+        var max = Math.floor(Math.max(min0, max0));
         var avg = Math.floor((min + max) / 2);
         return StringTools.lpad(dice, " ", 6)
             + " [ " + StringTools.lpad(min + "", " ", 3)

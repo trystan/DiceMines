@@ -36,6 +36,9 @@ class SelectPartyScreen extends Screen {
     }
 
     private function accept(index:Int):Void {
+        if (party.length == 8)
+            return;
+
         party.push(list[index]);
         newList();
     }
@@ -45,17 +48,22 @@ class SelectPartyScreen extends Screen {
 
         var hilight = Color.hsv(60, 90, 90).toInt();
 
-        display.writeCenter("-- press [a] through [e] to add to your party, [n] to view the next set of recruits --", 2, hilight);
+        display.writeCenter("-- press [a] through [e] to add up to 8 to your party, [n] to view the next set of recruits --", 2, hilight);
 
         var x = 6;
         var y = 4;
-        var i = 0;
-        for (c in list) {
-            display.write("[" + ("abcdef".charAt(i++)) + ']', x-5, y, hilight);
 
-            CharacterDisplay.display(c, display, x, y, true);
+        if (party.length == 8) {
+            display.write("You've got a full party of 8.", x, y);
+        } else {
+            var i = 0;
+            for (c in list) {
+                display.write("[" + ("abcdef".charAt(i++)) + ']', x-5, y, hilight);
 
-            y = display.cursorY + 2;
+                CharacterDisplay.display(c, display, x, y, true);
+
+                y = display.cursorY + 2;
+            }
         }
 
         if (party.length > 0)
