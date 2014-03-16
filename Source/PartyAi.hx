@@ -95,7 +95,7 @@ class PartyAi {
         isWorldgen = false;
         this.world = world;
 
-        if (Math.random() > 0.01)
+        if (Math.random() > 0.0025)
             return;
 
         switch(Math.floor(Math.random() * 32)) {

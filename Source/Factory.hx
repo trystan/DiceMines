@@ -281,6 +281,7 @@ class Factory {
         c.resistanceStat = Dice.add(c.resistanceStat, "1d1+2");
 
         c.abilities.push(ability("Knock back"));
+        c.abilities.push(randomAbility());
 
         return c;
     }
@@ -379,6 +380,8 @@ class Factory {
                 return list;
 
             case 2: return [ghost(z)];
+
+            case 3: return [fairy(z)];
 
             default:
                 var list = new Array<Creature>();
@@ -1163,7 +1166,7 @@ class HealingAuraAbility extends Ability {
             average /= people;
 
             return {
-                percent: self.hasDice() && min < 10 || average < 20 ? 0.75 : 0.0,
+                percent: self.hasDice() && min < 10 || average < 20 ? self.helpfulness : 0.0,
                    func: function(self):Void {
                         var dice = self.getDiceToUseForAbility();
                         if (dice.number > 0)
@@ -1216,7 +1219,7 @@ class PiousAttackAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : self.helpfulness,
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     if (dice.number > 0)
@@ -1262,7 +1265,7 @@ class PiousDefenceAbility extends Ability {
 
     override public function aiUsage(self:Creature): { percent:Float, func:Creature -> Void } {
         return {
-            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : 0.25,
+            percent: self.nextAttackEffects.length > 0 || !self.hasDice() ? 0 : self.helpfulness, 
                func: function(self):Void {
                     var dice = self.getDiceToUseForAbility();
                     if (dice.number > 0)

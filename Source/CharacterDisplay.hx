@@ -49,9 +49,9 @@ class CharacterDisplay {
         if (compact) {
             var equipment = new Array<String>();
             if (hero.meleeWeapon != null)
-                equipment.push(hero.meleeWeapon.name);
+                equipment.push("a " + hero.meleeWeapon.name);
             if (hero.rangedWeapon != null)
-                equipment.push(hero.rangedWeapon.name);
+                equipment.push("a " + hero.rangedWeapon.name);
             if (hero.armor != null)
                 equipment.push(hero.armor.name);
 

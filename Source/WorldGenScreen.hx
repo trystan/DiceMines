@@ -110,7 +110,7 @@ class WorldGenScreen extends Screen {
 
     private function addCreatures():Void {
         for (z in 0 ... world.tiles.depth) {
-            for (i in 0 ... 20 + z) {
+            for (i in 0 ... 20 + z * 2) {
                 var x = 0;
                 var y = 0;
                 do {
@@ -134,7 +134,7 @@ class WorldGenScreen extends Screen {
 
     private function addDice():Void {
         for (z in 0 ... world.tiles.depth) {
-            for (i in 0 ... 10 + z * 3) {
+            for (i in 0 ... 20 + z * 3) {
                 var x = 0;
                 var y = 0;
                 do {
@@ -142,26 +142,30 @@ class WorldGenScreen extends Screen {
                     y = Math.floor(Math.random() * (world.tiles.height - 20) + 10);
                 } while(world.tiles.get(x, y, z) != world.tile_floor);
 
-                var here = new IntPoint(x, y);
-                var nearWallCandidates = new Array<IntPoint>();
-
-                for (n in here.neighbors9()) {
-                    if (world.tiles.get(n.x, n.y, z) != world.tile_floor)
-                        continue;
-
-                    var isOk = false;
-                    for (n2 in n.neighbors8()) {
-                        if (world.tiles.get(n2.x, n2.y, z) == world.tile_wall)
-                            isOk = true;
-                    }
-                    if (isOk)
-                        nearWallCandidates.push(n);
-                }
-
-                for (p in nearWallCandidates)
-                    world.addItem(Factory.dice(), p.x, p.y, z);
+                addDiceAt(x, y, z);
             }
         }
+    }
+
+    private function addDiceAt(x:Int, y:Int, z:Int):Void {
+        var here = new IntPoint(x, y, z);
+        var nearWallCandidates = new Array<IntPoint>();
+
+        for (n in here.neighbors9()) {
+            if (world.tiles.get(n.x, n.y, n.z) != world.tile_floor)
+                continue;
+
+            var isOk = false;
+            for (n2 in n.neighbors8()) {
+                if (world.tiles.get(n2.x, n2.y, n2.z) == world.tile_wall)
+                    isOk = true;
+            }
+            if (isOk)
+                nearWallCandidates.push(n);
+        }
+
+        for (p in nearWallCandidates)
+            world.addItem(Factory.dice(), p.x, p.y, p.z);
     }
 
     private function addItems():Void {
@@ -359,6 +363,10 @@ class WorldGenScreen extends Screen {
             for (i in 0 ... 40) {
                 var x = Math.floor(Math.random() * world.heights.width);
                 var y = Math.floor(Math.random() * world.heights.height);
+
+                if (world.tiles.get(x, y, z) != world.tile_wall)
+                    continue;
+
                 var ox = x;
                 var oy = y;
                 for (i in 0 ... 1) {
@@ -375,6 +383,7 @@ class WorldGenScreen extends Screen {
                         y += my;
                     }
                 }
+                addDiceAt(ox, oy, z);
             }
         }
     }
@@ -401,7 +410,6 @@ class WorldGenScreen extends Screen {
             }
         }
     }
-
 
     private function addStairs():Void {
         for (z in 0 ... world.heights.depth) {
