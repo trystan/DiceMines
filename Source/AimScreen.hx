@@ -47,18 +47,15 @@ class AimScreen extends Screen {
     }
 
     private function fire():Void {
-        exit();
         if (isOk)
             callbackFunction(targetX, targetY);
+        exit();
         rl.trigger("redraw");
     }
     
     private function draw(display:AsciiDisplay):Void {
         world.playScreen.draw(display);
         var fg = new Color(250, 250, 250).toInt();
-
-        //if (prompt != null)
-        //    display.writeCenter(prompt, 2, fg, new Color(0,0,0).toInt());
 
         var glyph = String.fromCharCode(250);
         var points = Bresenham.line(player.x, player.y, targetX, targetY).points;

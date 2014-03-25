@@ -43,8 +43,9 @@ class RL {
         {
             var e = inputTranslator.last_keyboard_event;
             inputTranslator.last_keyboard_event = null;
-            trigger(e);
-            trigger("keypress", e);
+            var screen = currentScreen;
+            screen.trigger(e);
+            screen.trigger("keypress", e);
         }
 
         trigger("tick");
